@@ -73,9 +73,23 @@ export function HeroSection() {
             transition={{ duration: 0.6 }}
             className="inline-block mb-6"
           >
-            <span className="px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white/90 text-sm font-medium border border-white/20">
-              ✝️ Welcome to Christ Apostolic Church International
-            </span>
+            <span className="
+  inline-block
+  max-w-full
+  px-3 sm:px-4
+  py-2
+  rounded-full
+  bg-white/10
+  backdrop-blur-sm
+  text-white/90
+  text-xs sm:text-sm
+  font-medium
+  border border-white/20
+  text-center
+  break-words
+">
+  ✝️ Welcome to Christ Apostolic Church International
+</span>
           </motion.div>
 
           {/* Main Heading */}

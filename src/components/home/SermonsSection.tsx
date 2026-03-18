@@ -7,33 +7,33 @@ import Image from "@/assets/image.jpg"
 const latestSermons = [
   {
     id: 1,
-    title: "Walking in Faith: Trusting God's Plan",
-    preacher: "Pastor James Mensah",
-    date: "Jan 1, 2026",
-    duration: "45 min",
+    title: "Solid Foundation 2026 – Day 25",
+    preacher: "Apostle Chris K. Narh",
+    date: "Jan 30, 2026",
+    duration: "78 min",
     type: "video",
     thumbnail: Image,
-    videoUrl: '#'
+    videoUrl: 'https://www.youtube.com/watch?v=-Kep0AGNcZY'
   },
   {
     id: 2,
-    title: "The Power of Prayer in Difficult Times",
-    preacher: "Elder Grace Owusu",
-    date: "Dec 29, 2025",
-    duration: "38 min",
+    title: "SOLID FOUNDATION 2026 - Day 18",
+    preacher: "Rev. Dr. George Asante",
+    date: "Jan 23, 2026",
+    duration: "98 min",
     type: "video",
     thumbnail: Image,
-    videoUrl: '#'
+    videoUrl: 'https://www.youtube.com/watch?v=unCT4f16oqw'
   },
   {
     id: 3,
-    title: "Living a Life of Purpose",
-    preacher: "Pastor James Mensah",
-    date: "Dec 25, 2025",
-    duration: "52 min",
+    title: "Solid Foundation 2026 – Day 21",
+    preacher: "Rev. Seth Frimpong",
+    date: "Jan 26, 2026",
+    duration: "61 min",
     type: "video",
     thumbnail: Image,
-    videoUrl: '#'
+    videoUrl: 'https://www.youtube.com/watch?v=4BizK_Aispo'
   },
 ];
 
@@ -122,7 +122,7 @@ export function SermonsSection() {
         </div>
 
         {/* View All Button */}
-        <div className="flex justify-center gap-4">
+        <div className="flex justify-center gap-4 mx-auto">
           <Button variant="churchPrimary" size="lg" asChild>
             <Link to="/sermons/video" className="flex items-center gap-2">
               <Play className="w-5 h-5" />
