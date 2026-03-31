@@ -68,7 +68,7 @@ export function HeroSection() {
         <div className="max-w-4xl mx-auto text-center">
           {/* Welcome Badge */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="inline-block mb-6"
@@ -94,13 +94,13 @@ export function HeroSection() {
 
           {/* Main Heading */}
           <motion.h1
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6"
+            className="font-heading text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.1] mb-6 tracking-tight"
           >
             A Place of{" "}
-            <span className="text-red-500 font-heading">Faith</span>,{" "}
+            <span className="text-gradient-red font-heading">Faith</span>,{" "}
             <br className="hidden sm:block" />
             Hope & Transformation
           </motion.h1>
@@ -110,16 +110,16 @@ export function HeroSection() {
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentVerse}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
+                exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.5 }}
                 className="text-center"
               >
                 <p className="text-white/90 text-lg md:text-xl italic max-w-2xl mx-auto">
                   "{bibleVerses[currentVerse].verse}"
                 </p>
-                <p className="text-red-500 font-medium mt-2">
+                <p className="text-church-brown font-semibold mt-2 drop-shadow-sm">
                   — {bibleVerses[currentVerse].reference}
                 </p>
               </motion.div>
@@ -144,7 +144,7 @@ export function HeroSection() {
 
           {/* CTA Buttons */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
@@ -152,7 +152,7 @@ export function HeroSection() {
             <Button
               size="xl"
               onClick={handleWatchLive}
-              className="flex items-center gap-2 bg-red-500"
+              className="flex items-center gap-2 bg-gradient-red text-white hover:opacity-90 transition-opacity"
             >
               <Play className="h-5 w-5" />
               Watch Live
@@ -162,7 +162,7 @@ export function HeroSection() {
               size="lg"
               variant="heroOutline"
               onClick={handleVisitUs}
-              className="border-2 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 font-semibold text-base px-8 py-6 bg-transparent"
+              className="bg-transparent"
             >
               <MapPin className="w-5 h-5 mr-2" />
               Visit Us

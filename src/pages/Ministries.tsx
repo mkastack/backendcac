@@ -3,7 +3,13 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Users, Heart, Music, BookOpen, Globe, Mic, Baby, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import heroImage from "@/assets/hero-church.jpg";
+import heroImage from "@/assets/546414627_122182576358563087_1189959514236409901_n.jpg";
+import musicImage from "@/assets/617650156_122201872118563087_4673335822186223448_n.jpg";
+import menImage from "@/assets/649209256_122208442994563087_3519845021812333563_n.jpg";
+import womenImage from "@/assets/615875304_122202142484563087_5863192403707978202_n.jpg";
+import childrenImage from "@/assets/630903071_122204749082563087_148430488719588598_n.jpg";
+import mediaImage from "@/assets/616582907_122201867060563087_8134349422166194362_n.jpg";
+import youthImage from "@/assets/569060568_122188550120563087_4196041456379429423_n.jpg";
 
 const ministries = [
   {
@@ -13,6 +19,7 @@ const ministries = [
     activities: ["Monthly Men's Breakfast", "Bible Study Groups", "Mentorship Program", "Community Outreach"],
     icon: Briefcase,
     color: "bg-blue-500",
+    image: menImage,
   },
   {
     id: "women",
@@ -21,6 +28,7 @@ const ministries = [
     activities: ["Women's Fellowship", "Prayer Meetings", "Annual Conference", "Skill Development"],
     icon: Heart,
     color: "bg-pink-500",
+    image: womenImage,
   },
   {
     id: "youth",
@@ -29,6 +37,7 @@ const ministries = [
     activities: ["Friday Youth Night", "Youth Camp", "Drama & Music", "Leadership Training"],
     icon: Music,
     color: "bg-purple-500",
+    image: youthImage,
   },
   {
     id: "children",
@@ -37,14 +46,7 @@ const ministries = [
     activities: ["Sunday School", "Vacation Bible School", "Children's Choir", "Family Events"],
     icon: Baby,
     color: "bg-green-500",
-  },
-  {
-    id: "evangelism",
-    name: "Evangelism & Missions",
-    description: "Spreading the Gospel to our community and beyond. We organize outreaches, mission trips, and community service to share Christ's love.",
-    activities: ["Street Evangelism", "Hospital Visits", "Prison Ministry", "Mission Trips"],
-    icon: Globe,
-    color: "bg-orange-500",
+    image: childrenImage,
   },
   {
     id: "media",
@@ -53,6 +55,16 @@ const ministries = [
     activities: ["Live Streaming", "Sound & Lighting", "Social Media", "Video Production"],
     icon: Mic,
     color: "bg-cyan-500",
+    image: mediaImage,
+  },
+  {
+    id: "music",
+    name: "Music Ministry",
+    description: "Leading worship through music and song. Our music ministry creates an atmosphere of praise through choirs, bands, and instrumental performances.",
+    activities: ["Choir Practice", "Worship Team", "Instrumental Ensemble", "Special Music Events"],
+    icon: Music,
+    color: "bg-indigo-500",
+    image: musicImage,
   },
 ];
 
@@ -105,18 +117,18 @@ export default function MinistriesPage() {
                   transition={{ duration: 0.5 }}
                   className="scroll-mt-32"
                 >
-                  <div className={`bg-white rounded-3xl overflow-hidden shadow-soft ${
+                  <div className={`group bg-card border border-border rounded-3xl overflow-hidden shadow-[0_3px_10px_rgba(0,0,0,0.08)] hover:!shadow-[0_20px_40px_rgba(0,0,0,0.1)] hover:!-translate-y-[3px] hover:scale-[1.005] transition-all duration-300 ${
                     index % 2 === 0 ? "" : "lg:flex-row-reverse"
                   }`}>
                     <div className="grid lg:grid-cols-2">
                       <div className={`p-8 sm:p-12 ${index % 2 === 0 ? "" : "lg:order-2"}`}>
-                        <div className={`w-16 h-16 rounded-2xl ${ministry.color} flex items-center justify-center mb-6`}>
-                          <ministry.icon className="w-8 h-8 text-white" />
+                        <div className={`w-16 h-16 rounded-2xl ${ministry.color} flex items-center justify-center mb-6 shadow-sm transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1 group-hover:shadow-lg group-hover:shadow-black/10`}>
+                          <ministry.icon className="w-8 h-8 text-white transition-all duration-300 transform group-hover:drop-shadow-md" />
                         </div>
-                        <h2 className="font-serif text-3xl font-bold text-foreground mb-4">
+                        <h2 className="font-serif text-2xl font-bold text-foreground mb-3">
                           {ministry.name}
                         </h2>
-                        <p className="text-muted-foreground text-lg mb-6">
+                        <p className="text-muted-foreground text-sm mb-6 text-justify leading-tight">
                           {ministry.description}
                         </p>
                         <div className="mb-8">
@@ -135,8 +147,8 @@ export default function MinistriesPage() {
                       <div className="relative">
                         <div className="absolute inset-0">
                           <img
-                            src={heroImage}
-                            alt="Church sanctuary"
+                            src={ministry.image || heroImage}
+                            alt={`${ministry.name} activities`}
                             className="w-full h-full object-cover"
                           />
                           <div className="absolute inset-0 bg-black/40" />

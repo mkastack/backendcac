@@ -60,12 +60,12 @@ export default function GivePage() {
               className="max-w-3xl mx-auto text-center"
             >
               <span className="inline-block px-4 py-1.5 bg-white/10 text-white rounded-full text-sm font-medium mb-4">
-                Give Online
+                Support Our Mission
               </span>
-              <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
+              <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
                 Partner with Us in Kingdom Work
               </h1>
-              <p className="text-white/80 text-lg">
+              <p className="text-white/80 text-sm leading-tight text-center max-w-2xl mx-auto">
                 Your generous giving enables us to spread the Gospel, support missions, 
                 and transform lives. Every gift makes a difference.
               </p>
@@ -81,7 +81,7 @@ export default function GivePage() {
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="bg-white rounded-3xl p-12 shadow-card text-center"
+                  className="bg-card border border-border rounded-3xl p-12 shadow-card text-center"
                 >
                   <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-6" />
                   <h2 className="font-serif text-3xl font-bold text-foreground mb-4">
@@ -106,10 +106,9 @@ export default function GivePage() {
                 <motion.div
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-white rounded-3xl p-8 sm:p-12 shadow-card"
+                  className="bg-card border border-border rounded-3xl p-8 sm:p-12 shadow-card"
                 >
                   <form onSubmit={handleSubmit} className="space-y-8">
-                    {/* Giving Type */}
                     <div>
                       <h3 className="font-serif text-xl font-bold text-foreground mb-4">
                         Select Giving Type
@@ -120,23 +119,22 @@ export default function GivePage() {
                             key={type.id}
                             type="button"
                             onClick={() => setSelectedType(type.id)}
-                            className={`p-4 rounded-xl border-2 text-left transition-all ${
+                            className={`group p-4 rounded-xl border-2 text-left transition-all duration-300 hover:!-translate-y-[3px] hover:shadow-lg ${
                               selectedType === type.id
-                                ? "border-red-500 bg-church-gold/5"
+                                ? "border-church-red bg-church-gold/5 shadow-md"
                                 : "border-border hover:border-red-200"
                             }`}
                           >
-                            <type.icon className={`w-6 h-6 mb-2 ${
-                              selectedType === type.id ? "text-muted-foreground" : "text-muted-foreground"
+                            <type.icon className={`w-6 h-6 mb-2 transition-all duration-300 group-hover:scale-105 group-hover:-translate-y-0.5 ${
+                              selectedType === type.id ? "text-church-red" : "text-muted-foreground"
                             }`} />
-                            <p className="font-semibold text-foreground">{type.label}</p>
+                            <p className="font-semibold text-foreground transition-colors group-hover:text-church-red">{type.label}</p>
                             <p className="text-xs text-muted-foreground">{type.description}</p>
                           </button>
                         ))}
                       </div>
                     </div>
 
-                    {/* Amount */}
                     <div>
                       <h3 className="font-serif text-xl font-bold text-foreground mb-4">
                         Enter Amount (GHS)
@@ -149,7 +147,7 @@ export default function GivePage() {
                             onClick={() => setAmount(preset)}
                             className={`px-6 py-3 rounded-lg font-semibold transition-all ${
                               amount === preset
-                                ? "bg-church-gold/50 text-white"
+                                ? "bg-church-gold/50 text-white shadow-sm"
                                 : "bg-muted text-muted-foreground hover:bg-muted/80"
                             }`}
                           >
@@ -172,7 +170,6 @@ export default function GivePage() {
                       </div>
                     </div>
 
-                    {/* Payment Method */}
                     <div>
                       <h3 className="font-serif text-xl font-bold text-foreground mb-4">
                         Payment Method
@@ -183,71 +180,27 @@ export default function GivePage() {
                             key={method.id}
                             type="button"
                             onClick={() => setSelectedMethod(method.id)}
-                            className={`p-4 rounded-xl border-2 text-center transition-all ${
+                            className={`group p-4 rounded-xl border-2 text-center transition-all duration-300 hover:!-translate-y-[3px] hover:scale-[1.005] hover:shadow-lg ${
                               selectedMethod === method.id
-                                ? "border-red-500 bg-church-gold/5"
+                                ? "border-church-red bg-church-gold/5 shadow-md"
                                 : "border-border hover:border-red-200"
                             }`}
                           >
-                            <method.icon className={`w-6 h-6 mx-auto mb-2 ${
-                              selectedMethod === method.id ? "text-muted-foreground" : "text-muted-foreground"
+                            <method.icon className={`w-6 h-6 mx-auto mb-2 transition-all duration-300 group-hover:scale-105 group-hover:-translate-y-0.5 ${
+                              selectedMethod === method.id ? "text-church-red" : "text-muted-foreground"
                             }`} />
-                            <p className="text-sm font-medium text-foreground">{method.label}</p>
+                            <p className="text-sm font-medium text-foreground group-hover:text-church-red transition-colors">{method.label}</p>
                           </button>
                         ))}
                       </div>
                     </div>
 
-                    {/* Submit */}
-                    <Button type="submit" size="xl" className="w-full bg-red-500 text-white hover:text-white/10 hover:text-white font-semibold">
+                    <Button type="submit" size="xl" className="w-full bg-gradient-red text-white hover:opacity-90 font-bold shadow-lg">
                       Give ₵{amount || "0"}
                     </Button>
-
-                    <p className="text-center text-sm text-muted-foreground">
-                      Your transaction is secure and encrypted.
-                    </p>
                   </form>
                 </motion.div>
               )}
-            </div>
-          </div>
-        </section>
-
-        {/* Scripture */}
-        <section className="py-16 bg-white">
-          <div className="container mx-auto px-6 text-center">
-            <blockquote className="max-w-2xl mx-auto">
-              <p className="font-serif text-2xl text-foreground italic mb-4">
-                "Each of you should give what you have decided in your heart to give, 
-                not reluctantly or under compulsion, for God loves a cheerful giver."
-              </p>
-              <cite className="text-red-500 font-medium">— 2 Corinthians 9:7</cite>
-            </blockquote>
-          </div>
-        </section>
-
-        {/* Bank Details */}
-        <section className="py-16 bg-church-cream relative">
-          <div className="absolute inset-0">
-              <img
-                src={heroImage}
-                alt="Church sanctuary"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-hero-overlay" />
-            </div>
-          <div className="container mx-auto px-6 relative">
-            <div className="max-w-xl mx-auto bg-transparent rounded-2xl p-8 shadow-soft text-center">
-              <Building className="w-12 h-12 text-red-500 mx-auto mb-4" />
-              <h3 className="font-serif text-xl font-bold text-foreground mb-4 text-white">
-                Bank Transfer Details
-              </h3>
-              <div className="space-y-2 text-muted-foreground text-white">
-                <p><strong>Bank:</strong> Ghana Commercial Bank</p>
-                <p><strong>Account Name:</strong> Christ Apostolic Church International</p>
-                <p><strong>Account Number:</strong> XXXX-XXXX-XXXX</p>
-                <p><strong>Branch:</strong> Bubiashie</p>
-              </div>
             </div>
           </div>
         </section>

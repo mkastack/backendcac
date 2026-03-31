@@ -65,83 +65,86 @@ export default function ContactPage() {
         {/* Contact Info & Form */}
         <section className="py-20 bg-church-cream">
           <div className="container mx-auto px-6">
-            <div className="grid lg:grid-cols-2 gap-16">
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
               {/* Contact Info */}
               <motion.div
                 initial={{ opacity: 0, x: -30 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
               >
-                <h2 className="font-serif text-3xl font-bold text-foreground mb-8">
-                  Visit Our Church
-                </h2>
+                <div className="bg-card border border-border rounded-xl overflow-hidden shadow-xl">
+                  {/* Header Bar */}
+                  <div className="bg-church-deep-blue py-4 text-center">
+                    <h3 className="text-white font-bold text-lg uppercase tracking-wide">
+                      Get In Touch With Us Now!
+                    </h3>
+                  </div>
 
-                <div className="space-y-6 mb-10">
-                  <div className="flex gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-church-gold/10 flex items-center justify-center shrink-0">
-                      <MapPin className="w-6 h-6 text-red-500" />
+                  {/* 2x2 Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 border-collapse">
+                    {/* Phone Section */}
+                    <div className="p-8 text-center border-b sm:border-r border-border hover:bg-muted/30 transition-colors">
+                      <div className="w-12 h-12 rounded-full bg-church-gold/10 flex items-center justify-center mx-auto mb-4">
+                        <Phone className="w-6 h-6 text-church-deep-blue dark:text-church-gold" />
+                      </div>
+                      <h4 className="font-bold text-foreground mb-2 text-lg">Phone Number</h4>
+                      <p className="text-muted-foreground text-sm">+233 XX XXX XXXX</p>
+                      <p className="text-muted-foreground text-sm">+233 XX XXX XXXX</p>
                     </div>
-                    <div>
-                      <h4 className="font-semibold text-foreground mb-1">Address</h4>
-                      <p className="text-muted-foreground">
+
+                    {/* Email Section */}
+                    <div className="p-8 text-center border-b border-border hover:bg-muted/30 transition-colors">
+                      <div className="w-12 h-12 rounded-full bg-church-gold/10 flex items-center justify-center mx-auto mb-4">
+                        <Mail className="w-6 h-6 text-church-deep-blue dark:text-church-gold" />
+                      </div>
+                      <h4 className="font-bold text-foreground mb-2 text-lg">Email</h4>
+                      <p className="text-muted-foreground text-sm break-all">christapostolicchurchbubiashie@gmail.com</p>
+                    </div>
+
+                    {/* Location Section */}
+                    <div className="p-8 text-center border-b sm:border-b-0 sm:border-r border-border hover:bg-muted/30 transition-colors">
+                      <div className="w-12 h-12 rounded-full bg-church-gold/10 flex items-center justify-center mx-auto mb-4">
+                        <MapPin className="w-6 h-6 text-church-deep-blue dark:text-church-gold" />
+                      </div>
+                      <h4 className="font-bold text-foreground mb-2 text-lg">Location</h4>
+                      <p className="text-muted-foreground text-sm leading-relaxed">
                         Christ Apostolic Church International<br />
                         Bubiashie Central, Accra, Ghana
                       </p>
                     </div>
-                  </div>
 
-                  <div className="flex gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-church-gold/10 flex items-center justify-center shrink-0">
-                      <Phone className="w-6 h-6 text-red-500" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-foreground mb-1">Phone</h4>
-                      <p className="text-muted-foreground">+233 XX XXX XXXX</p>
-                      <p className="text-muted-foreground">+233 XX XXX XXXX</p>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-church-gold/10 flex items-center justify-center shrink-0">
-                      <Mail className="w-6 h-6 text-red-500" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-foreground mb-1">Email</h4>
-                      <p className="text-muted-foreground">christapostolicchurchbubiashie@gmail.com</p>
+                    {/* Service Times Section */}
+                    <div className="p-8 text-center hover:bg-muted/30 transition-colors">
+                      <div className="w-12 h-12 rounded-full bg-church-gold/10 flex items-center justify-center mx-auto mb-4">
+                        <Clock className="w-6 h-6 text-church-deep-blue dark:text-church-gold" />
+                      </div>
+                      <h4 className="font-bold text-foreground mb-2 text-lg">Service Times</h4>
+                      <div className="space-y-1">
+                        <p className="text-muted-foreground text-sm">Sun: 8:00 AM & 10:30 AM</p>
+                        <p className="text-muted-foreground text-sm">Wed: 6:00 PM | Fri: 6:00 PM</p>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-church-gold/10 flex items-center justify-center shrink-0">
-                      <Clock className="w-6 h-6 text-red-500" />
+                  {/* Social Footer */}
+                  <div className="p-6 bg-muted/20 border-t border-border flex flex-col items-center gap-4">
+                    <h4 className="font-semibold text-foreground uppercase text-xs tracking-wider">Follow Us</h4>
+                    <div className="flex gap-4">
+                      {[
+                        { icon: Facebook, label: "Facebook" },
+                        { icon: Youtube, label: "YouTube" },
+                        { icon: Instagram, label: "Instagram" },
+                      ].map((social) => (
+                        <a
+                          key={social.label}
+                          href="#"
+                          className="w-10 h-10 rounded-full bg-muted text-foreground flex items-center justify-center hover:bg-church-gold hover:text-white transition-all duration-300 shadow-sm"
+                          aria-label={social.label}
+                        >
+                          <social.icon className="w-4 h-4" />
+                        </a>
+                      ))}
                     </div>
-                    <div>
-                      <h4 className="font-semibold text-foreground mb-1">Service Times</h4>
-                      <p className="text-muted-foreground">Sunday: 8:00 AM & 10:30 AM</p>
-                      <p className="text-muted-foreground">Wednesday: 6:00 PM</p>
-                      <p className="text-muted-foreground">Friday: 6:00 PM</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Social Links */}
-                <div>
-                  <h4 className="font-semibold text-foreground mb-4">Follow Us</h4>
-                  <div className="flex gap-3">
-                    {[
-                      { icon: Facebook, label: "Facebook" },
-                      { icon: Youtube, label: "YouTube" },
-                      { icon: Instagram, label: "Instagram" },
-                    ].map((social) => (
-                      <a
-                        key={social.label}
-                        href="#"
-                        className="w-12 h-12 rounded-xl bg-church-deep-blue text-white flex items-center justify-center hover:bg-church-gold transition-colors"
-                        aria-label={social.label}
-                      >
-                        <social.icon className="w-5 h-5" />
-                      </a>
-                    ))}
                   </div>
                 </div>
 
@@ -159,7 +162,7 @@ export default function ContactPage() {
                 </h2>
 
                 {submitted ? (
-                  <div className="bg-white rounded-2xl p-12 shadow-soft text-center">
+                  <div className="bg-card border border-border rounded-2xl p-12 shadow-[0_3px_10px_rgba(0,0,0,0.08)] hover:!shadow-[0_5px_15px_rgba(0,0,0,0.15)] hover:!-translate-y-[3px] transition-all duration-300 text-center">
                     <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
                     <h3 className="font-serif text-xl font-bold text-foreground mb-2">
                       Message Sent!
@@ -178,7 +181,7 @@ export default function ContactPage() {
                     </Button>
                   </div>
                 ) : (
-                  <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-8 shadow-soft space-y-6">
+                  <form onSubmit={handleSubmit} className="bg-card border border-border rounded-2xl p-8 shadow-[0_3px_10px_rgba(0,0,0,0.08)] hover:!shadow-[0_5px_15px_rgba(0,0,0,0.15)] hover:!-translate-y-[3px] transition-all duration-300 space-y-6">
                     <div className="grid sm:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-foreground mb-2">
@@ -253,7 +256,7 @@ export default function ContactPage() {
                  {/* Map Placeholder */}
                 <div className="mt-10 bg-church-light-blue rounded-2xl h-64 flex items-center justify-center">
                   <div className="text-center">
-                    <MapPin className="w-12 h-20 text-red-500 mx-auto mb-3" />
+                    <MapPin className="w-12 h-20 text-church-red mx-auto mb-3" />
                     <p className="text-muted-foreground">Interactive map coming soon</p>
                   </div>
                 </div>

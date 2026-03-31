@@ -19,8 +19,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ["Playfair Display", "serif"], // Hero, H1-H6, quotes
-        body: ["Lato", "sans-serif"], // Paragraphs, nav, buttons
+        heading: ["Poppins", "Montserrat", "sans-serif"], 
+        body: ["Montserrat", "sans-serif"],
+        sans: ["Montserrat", "sans-serif"],
+        serif: ["Poppins", "Montserrat", "sans-serif"],
       },
       fontSize: {
         hero: ["4rem", { lineHeight: "1.1", fontWeight: "700" }], // Hero H1
@@ -77,8 +79,11 @@ export default {
           "light-blue": "hsl(var(--church-light-blue))",
           gold: "hsl(var(--church-gold))",
           "gold-light": "hsl(var(--church-gold-light))",
+          red: "hsl(var(--church-red))",
+          "red-dark": "hsl(var(--church-red-dark))",
           cream: "hsl(var(--church-cream))",
           "warm-white": "hsl(var(--church-warm-white))",
+          brown: "#C19A6B", // Lighter Fallow brown for visibility on dark backgrounds
         },
       },
       borderRadius: {

@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { BookOpen, Clock, User, Download, Search, Filter, Mic } from "lucide-react";
+import { BookOpen, Clock, User, Download, Search, Filter, Mic, Play } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-church.jpg";
@@ -112,7 +112,7 @@ export default function AudioSermonsPage() {
         </section>
 
         {/* Filters */}
-        <section className="py-8 bg-white border-b border-border sticky top-20 z-30">
+        <section className="py-8 bg-background border-b border-border sticky top-20 z-30">
           <div className="container mx-auto px-6">
             <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
               <div className="relative w-full sm:w-80">
@@ -157,7 +157,7 @@ export default function AudioSermonsPage() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.5, delay: index * 0.05 }}
-                    className="bg-white rounded-2xl p-6 sm:p-8 shadow-soft hover:shadow-card transition-all duration-300 group cursor-pointer"
+                    className="bg-card border border-border rounded-2xl p-6 sm:p-8 shadow-[0_3px_10px_rgba(0,0,0,0.08)] hover:!shadow-[0_5px_15px_rgba(0,0,0,0.15)] hover:!-translate-y-[3px] transition-all duration-300 group cursor-pointer"
                   >
                     <div className="flex flex-col sm:flex-row gap-6">
                       <div className="shrink-0">
@@ -166,7 +166,7 @@ export default function AudioSermonsPage() {
                         </div>
                       </div>
                       <div className="flex-1">
-                        <span className="inline-block px-3 py-1 bg-church-light-blue text-church-deep-blue rounded-full text-xs font-medium mb-3">
+                        <span className="inline-block px-3 py-1 bg-church-light-blue text-church-deep-blue dark:bg-church-gold/10 dark:text-church-gold rounded-full text-[10px] font-bold uppercase tracking-wider mb-3">
                           {sermon.topic}
                         </span>
                         <h3 className="font-serif font-semibold text-xl text-foreground mb-2 group-hover:text-red-500 transition-colors">
@@ -186,7 +186,10 @@ export default function AudioSermonsPage() {
                         </div>
                       </div>
                       <div className="shrink-0 flex sm:flex-col gap-2">
-                        <Button className="hover:bg-red-500" size="sm">
+                        <Button className="bg-church-gold hover:bg-church-gold/90 text-white" size="sm">
+                          <Play className="w-4 h-4" />
+                        </Button>
+                        <Button variant="outline" className="border-church-gold text-church-gold hover:bg-church-gold/10" size="sm">
                           <Download className="w-4 h-4" />
                         </Button>
                       </div>
@@ -203,7 +206,7 @@ export default function AudioSermonsPage() {
         </section>
 
         {/* CTA Section */}
-        <section className="py-16 bg-white relative">
+        <section className="py-16 bg-background relative">
           <div className="absolute inset-0">
             <img
               src={heroImage}

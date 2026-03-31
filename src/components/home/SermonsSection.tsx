@@ -39,7 +39,7 @@ const latestSermons = [
 
 export function SermonsSection() {
   return (
-    <section className="py-20 lg:py-28 bg-white">
+    <section className="py-20 lg:py-28 bg-background">
       <div className="container mx-auto px-6">
         {/* Section Header */}
         <motion.div
@@ -48,7 +48,7 @@ export function SermonsSection() {
           viewport={{ once: true }}
           className="text-center mb-14"
         >
-          <span className="inline-block px-4 py-1.5 bg-church-gold/10 text-red-500 rounded-full text-sm font-medium mb-4">
+          <span className="inline-block px-4 py-1.5 bg-church-gold/10 text-church-red rounded-full text-sm font-medium mb-4">
             Latest Sermons
           </span>
           <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4">
@@ -65,11 +65,11 @@ export function SermonsSection() {
           {latestSermons.map((sermon, index) => (
             <motion.article
               key={sermon.id}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="group bg-white rounded-2xl shadow-soft hover:shadow-card transition-all duration-300 overflow-hidden border border-border"
+              className="group bg-card rounded-2xl shadow-[0_2px_6px_rgba(0,0,0,0.06)] hover:!shadow-[0_10px_20px_rgba(0,0,0,0.1)] hover:!-translate-y-[3px] hover:scale-[1.005] transition-all duration-300 overflow-hidden border border-border"
             >
               {/* Thumbnail */}
               <div className="relative overflow-hidden aspect-video">
@@ -100,7 +100,7 @@ export function SermonsSection() {
 
               {/* Content */}
               <div className="p-6">
-                <h3 className="font-heading font-semibold text-lg text-foreground mb-3 line-clamp-2 group-hover:text-red-500 transition-colors">
+                <h3 className="font-heading font-semibold text-lg text-foreground mb-3 line-clamp-2 group-hover:text-church-red transition-colors">
                   {sermon.title}
                 </h3>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">

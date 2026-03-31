@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import heroImage from "@/assets/8.jpeg";
+import heroImage from "@/assets/514032381_122169086210563087_2234518162042499617_n.jpg";
 import heroImage2 from "@/assets/10.jpeg";
 
 const testimonies = [
@@ -91,7 +91,7 @@ export default function PrayerPage() {
               <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
                 We're Here to Pray With You
               </h1>
-              <p className="text-white/80 text-lg">
+              <p className="text-white/80 text-sm leading-tight max-w-2xl mx-auto">
                 Submit your prayer request and share your testimony. Our prayer team is ready to stand with you in faith.
               </p>
             </motion.div>
@@ -99,7 +99,7 @@ export default function PrayerPage() {
         </section>
 
         {/* Prayer Request Form */}
-        <section className="py-20 bg-white">
+        <section className="py-20 bg-background">
           <div className="container mx-auto px-6">
             <div className="grid lg:grid-cols-2 gap-16">
               <motion.div
@@ -107,94 +107,103 @@ export default function PrayerPage() {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
               >
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 rounded-xl bg-church-gold/10 flex items-center justify-center">
-                    <MessageSquare className="w-6 h-6 text-red-500" />
-                  </div>
-                  <h2 className="font-serif text-3xl font-bold text-foreground">
-                    Prayer Request
-                  </h2>
-                </div>
-                <p className="text-muted-foreground mb-8">
-                  Whatever you're going through, you don't have to face it alone. 
-                  Share your prayer request and our dedicated prayer team will intercede on your behalf.
-                </p>
-
-                {prayerSubmitted ? (
-                  <div className="bg-church-cream rounded-2xl p-8 text-center">
-                    <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                    <h3 className="font-serif text-xl font-bold text-foreground mb-2">
-                      Request Received
-                    </h3>
-                    <p className="text-muted-foreground">
-                      Our prayer team will lift your request to God. May you experience His peace and provision.
-                    </p>
-                    <Button 
-                      variant="churchOutline" 
-                      className="mt-4"
-                      onClick={() => setPrayerSubmitted(false)}
-                    >
-                      Submit Another Request
-                    </Button>
-                  </div>
-                ) : (
-                  <form onSubmit={handlePrayerSubmit} className="space-y-6">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        id="anonymous"
-                        checked={prayerForm.isAnonymous}
-                        onChange={(e) => setPrayerForm({ ...prayerForm, isAnonymous: e.target.checked })}
-                        className="w-5 h-5 rounded border-border"
-                      />
-                      <label htmlFor="anonymous" className="text-foreground">
-                        Submit anonymously
-                      </label>
+                <div className="bg-card border border-border rounded-3xl p-8 sm:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] hover:!shadow-[0_20px_40px_rgba(0,0,0,0.08)] transition-all duration-300">
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="w-14 h-14 rounded-2xl bg-church-gold/10 flex items-center justify-center shrink-0">
+                      <MessageSquare className="w-7 h-7 text-church-red" />
                     </div>
-                    {!prayerForm.isAnonymous && (
-                      <>
-                        <div>
-                          <label className="block text-sm font-medium text-foreground mb-2">
-                            Your Name
-                          </label>
-                          <Input
-                            type="text"
-                            value={prayerForm.name}
-                            onChange={(e) => setPrayerForm({ ...prayerForm, name: e.target.value })}
-                            placeholder="Enter your name"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-foreground mb-2">
-                            Email (optional)
-                          </label>
-                          <Input
-                            type="email"
-                            value={prayerForm.email}
-                            onChange={(e) => setPrayerForm({ ...prayerForm, email: e.target.value })}
-                            placeholder="Enter your email"
-                          />
-                        </div>
-                      </>
-                    )}
                     <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        Your Prayer Request *
-                      </label>
-                      <Textarea
-                        value={prayerForm.request}
-                        onChange={(e) => setPrayerForm({ ...prayerForm, request: e.target.value })}
-                        placeholder="Share your prayer request..."
-                        rows={5}
-                        required
-                      />
+                      <h2 className="font-serif text-3xl font-bold text-foreground">
+                        Prayer Request
+                      </h2>
+                      <p className="text-muted-foreground text-sm mt-1">We stand with you in faith.</p>
                     </div>
-                    <Button type="submit" variant="churchPrimary" className="w-full">
-                      <Send className="w-4 h-4 mr-2" />
-                      Submit Prayer Request
-                    </Button>
-                  </form>
-                )}
+                  </div>
+
+                  <p className="text-muted-foreground mb-8 text-sm leading-relaxed">
+                    Whatever you're going through, you don't have to face it alone. 
+                    Share your prayer request and our dedicated prayer team will intercede on your behalf.
+                  </p>
+
+                  {prayerSubmitted ? (
+                    <div className="bg-background border border-border rounded-2xl p-8 text-center">
+                      <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                      <h3 className="font-serif text-xl font-bold text-foreground mb-2">
+                        Request Received
+                      </h3>
+                      <p className="text-muted-foreground">
+                        Our prayer team will lift your request to God. May you experience His peace and provision.
+                      </p>
+                      <Button 
+                        variant="churchOutline" 
+                        className="mt-6"
+                        onClick={() => setPrayerSubmitted(false)}
+                      >
+                        Submit Another Request
+                      </Button>
+                    </div>
+                  ) : (
+                    <form onSubmit={handlePrayerSubmit} className="space-y-6">
+                      <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl border border-border/50">
+                        <input
+                          type="checkbox"
+                          id="anonymous"
+                          checked={prayerForm.isAnonymous}
+                          onChange={(e) => setPrayerForm({ ...prayerForm, isAnonymous: e.target.checked })}
+                          className="w-5 h-5 rounded border-border accent-church-red"
+                        />
+                        <label htmlFor="anonymous" className="text-sm font-medium text-foreground cursor-pointer">
+                          Submit anonymously
+                        </label>
+                      </div>
+                      {!prayerForm.isAnonymous && (
+                        <div className="grid sm:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-sm font-medium text-foreground mb-2">
+                              Your Name
+                            </label>
+                            <Input
+                              type="text"
+                              value={prayerForm.name}
+                              onChange={(e) => setPrayerForm({ ...prayerForm, name: e.target.value })}
+                              placeholder="Enter your name"
+                              className="bg-muted/30 border-border/50 focus:border-church-red transition-all"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-foreground mb-2">
+                              Email (optional)
+                            </label>
+                            <Input
+                              type="email"
+                              value={prayerForm.email}
+                              onChange={(e) => setPrayerForm({ ...prayerForm, email: e.target.value })}
+                              placeholder="Enter your email"
+                              className="bg-muted/30 border-border/50 focus:border-church-red transition-all"
+                            />
+                          </div>
+                        </div>
+                      )}
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">
+                          Your Prayer Request *
+                        </label>
+                        <Textarea
+                          value={prayerForm.request}
+                          onChange={(e) => setPrayerForm({ ...prayerForm, request: e.target.value })}
+                          placeholder="Share your prayer request..."
+                          rows={5}
+                          required
+                          className="bg-muted/30 border-border/50 focus:border-church-red transition-all resize-none"
+                        />
+                      </div>
+                      <Button type="submit" variant="churchPrimary" className="w-full h-12 text-base font-bold shadow-lg shadow-black/10">
+                        <Send className="w-5 h-5 mr-2" />
+                        Submit Prayer Request
+                      </Button>
+                    </form>
+                  )}
+                </div>
               </motion.div>
 
               {/* Testimony Form */}
@@ -203,79 +212,90 @@ export default function PrayerPage() {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
               >
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 rounded-xl bg-church-gold/10 flex items-center justify-center">
-                    <Heart className="w-6 h-6 text-red-500" />
+                <div className="bg-card border border-border rounded-3xl p-8 sm:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] hover:!shadow-[0_20px_40px_rgba(0,0,0,0.08)] transition-all duration-300">
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="w-14 h-14 rounded-2xl bg-church-gold/10 flex items-center justify-center shrink-0">
+                      <Heart className="w-7 h-7 text-church-red" />
+                    </div>
+                    <div>
+                      <h2 className="font-serif text-3xl font-bold text-foreground">
+                        Share Testimony
+                      </h2>
+                      <p className="text-muted-foreground text-sm mt-1">Glorify God with your story.</p>
+                    </div>
                   </div>
-                  <h2 className="font-serif text-3xl font-bold text-foreground">
-                    Share Testimony
-                  </h2>
-                </div>
-                <p className="text-muted-foreground mb-8">
-                  Has God done something amazing in your life? Share your testimony to encourage others and glorify God!
-                </p>
 
-                {testimonySubmitted ? (
-                  <div className="bg-church-cream rounded-2xl p-8 text-center">
-                    <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                    <h3 className="font-serif text-xl font-bold text-foreground mb-2">
-                      Testimony Submitted
-                    </h3>
-                    <p className="text-muted-foreground">
-                      Thank you for sharing! Your testimony may be featured after review.
-                    </p>
-                    <Button 
-                      variant="churchOutline" 
-                      className="mt-4"
-                      onClick={() => setTestimonySubmitted(false)}
-                    >
-                      Share Another Testimony
-                    </Button>
-                  </div>
-                ) : (
-                  <form onSubmit={handleTestimonySubmit} className="space-y-6">
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        Your Name *
-                      </label>
-                      <Input
-                        type="text"
-                        value={testimonyForm.name}
-                        onChange={(e) => setTestimonyForm({ ...testimonyForm, name: e.target.value })}
-                        placeholder="Enter your name"
-                        required
-                      />
+                  <p className="text-muted-foreground mb-8 text-sm leading-relaxed">
+                    Has God done something amazing in your life? Share your testimony to encourage others and glorify God!
+                  </p>
+
+                  {testimonySubmitted ? (
+                    <div className="bg-background border border-border rounded-2xl p-8 text-center">
+                      <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                      <h3 className="font-serif text-xl font-bold text-foreground mb-2">
+                        Testimony Submitted
+                      </h3>
+                      <p className="text-muted-foreground">
+                        Thank you for sharing! Your testimony may be featured after review.
+                      </p>
+                      <Button 
+                        variant="churchOutline" 
+                        className="mt-6"
+                        onClick={() => setTestimonySubmitted(false)}
+                      >
+                        Share Another Testimony
+                      </Button>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        Email *
-                      </label>
-                      <Input
-                        type="email"
-                        value={testimonyForm.email}
-                        onChange={(e) => setTestimonyForm({ ...testimonyForm, email: e.target.value })}
-                        placeholder="Enter your email"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        Your Testimony *
-                      </label>
-                      <Textarea
-                        value={testimonyForm.testimony}
-                        onChange={(e) => setTestimonyForm({ ...testimonyForm, testimony: e.target.value })}
-                        placeholder="Share what God has done..."
-                        rows={5}
-                        required
-                      />
-                    </div>
-                    <Button type="submit" variant="churchPrimary" className="w-full">
-                      <Heart className="w-4 h-4 mr-2" />
-                      Submit Testimony
-                    </Button>
-                  </form>
-                )}
+                  ) : (
+                    <form onSubmit={handleTestimonySubmit} className="space-y-6">
+                      <div className="grid sm:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-foreground mb-2">
+                            Your Name *
+                          </label>
+                          <Input
+                            type="text"
+                            value={testimonyForm.name}
+                            onChange={(e) => setTestimonyForm({ ...testimonyForm, name: e.target.value })}
+                            placeholder="Enter your name"
+                            required
+                            className="bg-muted/30 border-border/50 focus:border-church-red transition-all"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-foreground mb-2">
+                            Email *
+                          </label>
+                          <Input
+                            type="email"
+                            value={testimonyForm.email}
+                            onChange={(e) => setTestimonyForm({ ...testimonyForm, email: e.target.value })}
+                            placeholder="Enter your email"
+                            required
+                            className="bg-muted/30 border-border/50 focus:border-church-red transition-all"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">
+                          Your Testimony *
+                        </label>
+                        <Textarea
+                          value={testimonyForm.testimony}
+                          onChange={(e) => setTestimonyForm({ ...testimonyForm, testimony: e.target.value })}
+                          placeholder="Share what God has done..."
+                          rows={5}
+                          required
+                          className="bg-muted/30 border-border/50 focus:border-church-red transition-all resize-none"
+                        />
+                      </div>
+                      <Button type="submit" variant="churchPrimary" className="w-full h-12 text-base font-bold shadow-lg shadow-black/10">
+                        <Heart className="w-5 h-5 mr-2" />
+                        Submit Testimony
+                      </Button>
+                    </form>
+                  )}
+                </div>
               </motion.div>
             </div>
           </div>
@@ -298,7 +318,7 @@ export default function PrayerPage() {
               viewport={{ once: true }}
               className="text-center mb-14"
             >
-              <span className="inline-block px-4 py-1.5 bg-white/10 text-red-500 rounded-full text-sm font-medium mb-4">
+              <span className="inline-block px-4 py-1.5 bg-white/10 text-white rounded-full text-sm font-medium mb-4">
                 Praise Reports
               </span>
               <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white">
@@ -314,7 +334,7 @@ export default function PrayerPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.1 }}
-                  className="bg-hero-overlay rounded-2xl p-6 shadow-soft"
+                  className="bg-hero-overlay rounded-2xl p-6 shadow-[0_3px_10px_rgba(0,0,0,0.08)] hover:!shadow-[0_5px_15px_rgba(0,0,0,0.15)] hover:!-translate-y-[3px] transition-all duration-300"
                 >
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
@@ -322,10 +342,10 @@ export default function PrayerPage() {
                     </div>
                     <div>
                       <p className="font-semibold text-white">{testimony.name}</p>
-                      <p className="text-sm text-red-500">{testimony.date}</p>
+                      <p className="text-sm text-church-red">{testimony.date}</p>
                     </div>
                   </div>
-                  <p className="text-white italic">"{testimony.testimony}"</p>
+                  <p className="text-white italic text-sm leading-tight">"{testimony.testimony}"</p>
                 </motion.div>
               ))}
             </div>

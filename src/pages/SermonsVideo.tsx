@@ -119,7 +119,7 @@ export default function VideoSermonsPage() {
         </section>
 
         {/* Filters */}
-        <section className="py-8 bg-white border-b border-border sticky top-20 z-30">
+        <section className="py-8 bg-background border-b border-border sticky top-20 z-30">
           <div className="container mx-auto px-6">
             <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
               <div className="relative w-full sm:w-80">
@@ -164,7 +164,7 @@ export default function VideoSermonsPage() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.5, delay: index * 0.1 }}
-                    className="group bg-white rounded-2xl shadow-soft hover:shadow-card transition-all duration-300 overflow-hidden"
+                    className="group bg-card border border-border rounded-2xl shadow-[0_3px_10px_rgba(0,0,0,0.08)] hover:!shadow-[0_5px_15px_rgba(0,0,0,0.15)] hover:!-translate-y-[3px] transition-all duration-300 overflow-hidden"
                   >
                     <div className="relative overflow-hidden aspect-video">
                       <img
@@ -223,7 +223,7 @@ export default function VideoSermonsPage() {
         </section>
 
         {/* CTA Section */}
-        <section className="py-16 bg-white relative">
+        <section className="py-16 bg-background relative">
           <div className="absolute inset-0">
             <img
               src={heroImage}

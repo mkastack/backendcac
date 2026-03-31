@@ -6,6 +6,7 @@ import { SermonsSection } from "@/components/home/SermonsSection";
 import { EventsSection } from "@/components/home/EventsSection";
 import { MinistriesSection } from "@/components/home/MinistriesSection";
 import { GiveSection } from "@/components/home/GiveSection";
+import { BlogSection } from "@/components/home/BlogSection";
 
 const Index = () => {
   return (
@@ -17,6 +18,7 @@ const Index = () => {
         <SermonsSection />
         <EventsSection />
         <MinistriesSection />
+        <BlogSection />
         <GiveSection />
       </main>
       <Footer />
