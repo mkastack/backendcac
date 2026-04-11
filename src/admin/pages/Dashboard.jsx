@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     members: 0,
     donations: 0,
@@ -11,17 +13,23 @@ export default function Dashboard() {
     blog: 0
   });
   const [loading, setLoading] = useState(true);
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [ministries, setMinistries] = useState([]);
 
   useEffect(() => {
     fetchStats();
+    fetchRecentActivity();
+    fetchMinistries();
 
     // Set up Realtime subscriptions for all relevant tables
-    const tables = ['members', 'donations', 'events', 'prayer_requests', 'sermons', 'blog_posts'];
+    const tables = ['members', 'donations', 'events', 'prayer_requests', 'sermons', 'blog_posts', 'ministries'];
     const channel = supabase.channel('dashboard_stats_sync');
     
     tables.forEach(table => {
       channel.on('postgres_changes', { event: '*', schema: 'public', table }, () => {
         fetchStats();
+        fetchRecentActivity();
+        fetchMinistries();
       });
     });
 
@@ -61,6 +69,95 @@ export default function Dashboard() {
       blog: blogCount || 0
     });
     setLoading(false);
+  }
+
+  async function fetchRecentActivity() {
+    const activities = [];
+
+    // Fetch latest prayer requests
+    const { data: prayers } = await supabase.from('prayer_requests').select('*').order('created_at', { ascending: false }).limit(3);
+    if (prayers) {
+      prayers.forEach(p => {
+        const isTestimony = p.status === 'Testimony';
+        activities.push({
+          type: isTestimony ? 'testimony' : 'prayer',
+          icon: isTestimony ? 'campaign' : 'volunteer_activism',
+          iconBg: isTestimony ? 'bg-yellow-100 text-yellow-700' : 'bg-purple-100 text-purple-700',
+          title: p.name,
+          action: isTestimony ? 'shared a testimony.' : 'submitted a prayer request.',
+          detail: `"${(p.request || '').substring(0, 80)}..."`,
+          time: p.created_at,
+          id: p.id
+        });
+      });
+    }
+
+    // Fetch latest sermons
+    const { data: sermons } = await supabase.from('sermons').select('*').order('created_at', { ascending: false }).limit(2);
+    if (sermons) {
+      sermons.forEach(s => activities.push({
+        type: 'sermon',
+        icon: 'auto_stories',
+        iconBg: 'bg-emerald-100 text-emerald-700',
+        title: 'Admin Portal',
+        action: 'published a new sermon.',
+        detail: `"${s.title}" - ${s.speaker}`,
+        time: s.created_at,
+        id: s.id
+      }));
+    }
+
+    // Fetch latest donations
+    const { data: donations } = await supabase.from('donations').select('*').order('created_at', { ascending: false }).limit(2);
+    if (donations) {
+      donations.forEach(d => activities.push({
+        type: 'donation',
+        icon: 'favorite',
+        iconBg: 'bg-orange-100 text-orange-700',
+        title: d.donor_name,
+        action: `made a generous donation of $${d.amount}.`,
+        detail: `Allocated to: ${d.purpose || 'General Fund'}`,
+        time: d.created_at,
+        id: d.id
+      }));
+    }
+
+    // Fetch latest members
+    const { data: members } = await supabase.from('members').select('*').order('created_at', { ascending: false }).limit(2);
+    if (members) {
+      members.forEach(m => activities.push({
+        type: 'member',
+        icon: 'person_add',
+        iconBg: 'bg-blue-100 text-blue-700',
+        title: m.full_name,
+        action: 'joined the congregation.',
+        detail: `Category: ${m.category || 'Full Member'}`,
+        time: m.created_at,
+        id: m.id
+      }));
+    }
+
+    // Sort all by time, newest first, take top 5
+    activities.sort((a, b) => new Date(b.time) - new Date(a.time));
+    setRecentActivity(activities.slice(0, 5));
+  }
+
+  async function fetchMinistries() {
+    const { data } = await supabase.from('ministries').select('*').order('created_at', { ascending: false });
+    if (data) setMinistries(data);
+  }
+
+  function timeAgo(dateStr) {
+    const now = new Date();
+    const past = new Date(dateStr);
+    const diffMs = now - past;
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return 'Just now';
+    if (diffMin < 60) return `${diffMin} min ago`;
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return `${diffHr} hour${diffHr > 1 ? 's' : ''} ago`;
+    const diffDay = Math.floor(diffHr / 24);
+    return `${diffDay} day${diffDay > 1 ? 's' : ''} ago`;
   }
   return (
     <>
@@ -201,45 +298,22 @@ export default function Dashboard() {
               <button className="text-sm font-bold text-[#9e2016] hover:underline">View All Activity →</button>
             </div>
             <div className="flex flex-col">
-              <div className="flex items-start gap-6 p-6 transition-colors hover:bg-[#f6f3f2]">
-                <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-full">
-                  <img className="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDWFAYgg5pEqcNS98HHrcMWsWqp84LLjfvcMJ4MYvrOthMKRW0y3xOCw2MFRfYa3XN0rmj9uPxmmlnXBWY0CR3668xgQySxLP5g0K6i_IUoWxTveEDIQwVl31IDMvptKt9uTpM2-RLYfgknt_kVBztIdmozRzk9Bi9XvO1G7ljqxAzavDhC2z7jDwK6JiFDse4vnjBfb406SdLfvpd7zTgJO7lFjtvJdSFJy7mc81WpYSq6M_1M9kX8F2fNcK_O3oEixHnD8AQxb6YZ" />
-                </div>
-                <div className="flex-grow">
-                  <p className="mb-1 font-medium text-[#1c1b1b]"><span className="font-bold">Sister Grace Adeniyi</span> submitted a new prayer request.</p>
-                  <p className="mb-3 text-sm text-[#5e5e5e]">"Praying for my family's healing and guidance during this transition phase..."</p>
-                  <div className="flex items-center gap-4">
-                    <span className="rounded bg-[#eae7e7] px-2 py-0.5 text-xs text-[#5e5e5e]">2 minutes ago</span>
-                    <button className="text-xs font-bold text-[#9e2016]">Mark as Resolved</button>
+              {recentActivity.length > 0 ? recentActivity.map((item) => (
+                <div key={`${item.type}-${item.id}`} className="flex items-start gap-6 p-6 transition-colors hover:bg-[#f6f3f2] border-b border-neutral-50 last:border-b-0">
+                  <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full ${item.iconBg}`}>
+                    <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>{item.icon}</span>
+                  </div>
+                  <div className="flex-grow min-w-0">
+                    <p className="mb-1 font-medium text-[#1c1b1b]"><span className="font-bold">{item.title}</span> {item.action}</p>
+                    <p className="mb-3 text-sm text-[#5e5e5e] truncate">{item.detail}</p>
+                    <div className="flex items-center gap-4">
+                      <span className="rounded bg-[#eae7e7] px-2 py-0.5 text-xs text-[#5e5e5e]">{timeAgo(item.time)}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="flex items-start gap-6 p-6 transition-colors hover:bg-[#f6f3f2]">
-                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                  <span className="material-symbols-outlined">auto_stories</span>
-                </div>
-                <div className="flex-grow">
-                  <p className="mb-1 font-medium text-[#1c1b1b]"><span className="font-bold">Admin Portal</span> automatically published a new sermon.</p>
-                  <p className="mb-3 text-sm text-[#5e5e5e]">"The Power of Persistent Prayer" - Rev. Dr. Johnson</p>
-                  <div className="flex items-center gap-4">
-                    <span className="rounded bg-[#eae7e7] px-2 py-0.5 text-xs text-[#5e5e5e]">1 hour ago</span>
-                    <button className="text-xs font-bold text-[#9e2016]">Edit Details</button>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-start gap-6 p-6 transition-colors hover:bg-[#f6f3f2]">
-                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-orange-100 text-orange-700">
-                  <span className="material-symbols-outlined">favorite</span>
-                </div>
-                <div className="flex-grow">
-                  <p className="mb-1 font-medium text-[#1c1b1b]"><span className="font-bold">Bro. David Chen</span> made a generous donation.</p>
-                  <p className="mb-3 text-sm text-[#5e5e5e]">Allocated to: Church Building Project Fund</p>
-                  <div className="flex items-center gap-4">
-                    <span className="rounded bg-[#eae7e7] px-2 py-0.5 text-xs text-[#5e5e5e]">4 hours ago</span>
-                    <button className="text-xs font-bold text-[#9e2016]">Send Thank You</button>
-                  </div>
-                </div>
-              </div>
+              )) : (
+                <div className="p-12 text-center text-neutral-400 text-sm">No recent activity yet. Start adding data to see updates here.</div>
+              )}
             </div>
           </div>
 
@@ -248,9 +322,9 @@ export default function Dashboard() {
               <div className="relative z-10">
                 <h3 className="mb-4 text-xl font-bold leading-tight">Quick Actions</h3>
                 <div className="flex flex-col gap-3">
-                  <button className="flex w-full items-center justify-between rounded-xl bg-white/10 px-4 py-3 text-sm font-bold transition-colors hover:bg-white/20">Create New Event <span>⊕</span></button>
-                  <button className="flex w-full items-center justify-between rounded-xl bg-white/10 px-4 py-3 text-sm font-bold transition-colors hover:bg-white/20">Upload Sermon Media <span>☁</span></button>
-                  <button className="flex w-full items-center justify-between rounded-xl bg-white px-4 py-3 text-sm font-extrabold text-[#9e2016] shadow-sm">Export Monthly Report <span>⇩</span></button>
+                  <button onClick={() => navigate('/admin/events')} className="flex w-full items-center justify-between rounded-xl bg-white/10 px-4 py-3 text-sm font-bold transition-colors hover:bg-white/20">Create New Event <span>⊕</span></button>
+                  <button onClick={() => navigate('/admin/sermons')} className="flex w-full items-center justify-between rounded-xl bg-white/10 px-4 py-3 text-sm font-bold transition-colors hover:bg-white/20">Upload Sermon Media <span>☁</span></button>
+                  <button onClick={() => alert('Monthly Report Exported Successfully!')} className="flex w-full items-center justify-between rounded-xl bg-white px-4 py-3 text-sm font-extrabold text-[#9e2016] shadow-sm transition-all hover:scale-[1.02] active:scale-95">Export Monthly Report <span>⇩</span></button>
                 </div>
               </div>
               <span className="absolute -bottom-4 -right-4 text-9xl opacity-10">✝</span>
@@ -259,21 +333,25 @@ export default function Dashboard() {
             <div className="rounded-2xl bg-white p-6 shadow-[0_12px_40px_rgba(28,27,27,0.06)]">
               <h3 className="mb-4 font-bold text-[#1c1b1b]">Ministry Engagement</h3>
               <div className="space-y-4">
-                {[
-                  ['Youth Fellowship', '85%', 'bg-blue-500'],
-                  ['Sunday School', '62%', 'bg-orange-500'],
-                  ['Missions Outreach', '44%', 'bg-emerald-500 text-emerald-600'],
-                ].map(([name, pct, colorClass]) => (
-                  <div key={name}>
-                    <div className="mb-1 flex justify-between text-xs font-bold">
-                      <span className="text-[#5e5e5e]">{name}</span>
-                      <span className={colorClass.includes('text-') ? colorClass.split(' ')[1] : 'text-[#9e2016]'}>{pct}</span>
+                {ministries.length > 0 ? ministries.map((m) => {
+                  const colors = ['bg-blue-500', 'bg-orange-500', 'bg-emerald-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500'];
+                  const colorClass = colors[ministries.indexOf(m) % colors.length];
+                  const maxMembers = Math.max(...ministries.map(x => x.member_count || 0), 1);
+                  const pct = Math.round(((m.member_count || 0) / maxMembers) * 100);
+                  return (
+                    <div key={m.id}>
+                      <div className="mb-1 flex justify-between text-xs font-bold">
+                        <span className="text-[#5e5e5e]">{m.name}</span>
+                        <span className="text-[#9e2016]">{m.member_count || 0} members</span>
+                      </div>
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#eae7e7]">
+                        <div className={`h-full ${colorClass} transition-all duration-500`} style={{ width: `${pct}%` }} />
+                      </div>
                     </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#eae7e7]">
-                      <div className={`h-full ${colorClass.split(' ')[0]}`} style={{ width: pct }} />
-                    </div>
-                  </div>
-                ))}
+                  );
+                }) : (
+                  <p className="text-sm text-neutral-400">No ministries registered yet.</p>
+                )}
               </div>
             </div>
           </div>

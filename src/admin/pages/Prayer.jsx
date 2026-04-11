@@ -113,9 +113,10 @@ export default function Prayer() {
   };
 
   const stats = {
-    total: rows.length,
+    total: rows.filter((r) => r.status !== 'Testimony').length,
     pending: rows.filter((r) => r.status === 'Pending').length,
     prayed: rows.filter((r) => r.status === 'Prayed For').length,
+    testimonies: rows.filter((r) => r.status === 'Testimony').length,
   };
   return (
     <>
@@ -161,14 +162,14 @@ export default function Prayer() {
               <div className="h-full bg-emerald-500" style={{ width: `${(stats.prayed / stats.total) * 100}%` }} />
             </div>
           </div>
-          <div className="rounded-xl bg-[#ffdad5] p-6 shadow-[0_12px_40px_rgba(28,27,27,0.06)]">
+          <div className="rounded-xl bg-[#fff8db] p-6 shadow-[0_12px_40px_rgba(28,27,27,0.06)]">
             <div className="flex items-center justify-between mb-1">
-              <p className="text-sm font-medium text-[#8e130c]">This Week</p>
-              <span className="material-symbols-outlined text-2xl text-[#9e2016]/40">trending_up</span>
+              <p className="text-sm font-medium text-[#7a6503]">Testimonies</p>
+              <span className="material-symbols-outlined text-2xl text-[#d4af37]/60">campaign</span>
             </div>
-            <p className="text-3xl font-bold text-[#9e2016]">+38</p>
+            <p className="text-3xl font-bold text-[#b8860b]">{stats.testimonies}</p>
             <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-black/5">
-              <div className="h-full bg-[#9e2016]" style={{ width: '60%' }} />
+              <div className="h-full bg-[#d4af37]" style={{ width: '100%' }} />
             </div>
           </div>
         </div>
@@ -227,11 +228,12 @@ export default function Prayer() {
                     <td className="px-8 py-6">
                       <span
                         className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${
-                          row.status === 'Pending' ? 'bg-[#ffdad6] text-[#93000a]' : 'bg-[#e1dfdf] text-[#636262]'
+                          row.status === 'Pending' ? 'bg-[#ffdad6] text-[#93000a]' : row.status === 'Testimony' ? 'bg-yellow-100 text-yellow-700' : 'bg-[#e1dfdf] text-[#636262]'
                         }`}
                       >
                         {row.status === 'Pending' && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#ba1a1a]" />}
                         {row.status === 'Prayed For' && <span className="material-symbols-outlined text-[14px]">check_circle</span>}
+                        {row.status === 'Testimony' && <span className="material-symbols-outlined text-[14px]">campaign</span>}
                         {row.status}
                       </span>
                     </td>
@@ -239,10 +241,11 @@ export default function Prayer() {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           className="rounded-xl p-2 text-[#59413d] transition-all hover:bg-[#ffdad5] hover:text-[#9e2016]"
-                          title={row.status === 'Pending' ? 'Mark as Prayed For' : 'Undo Mark'}
-                          onClick={() => toggleStatus(row.id, row.status)}
+                          title={row.status === 'Pending' ? 'Mark as Prayed For' : row.status === 'Testimony' ? 'Testimony' : 'Undo Mark'}
+                          onClick={() => { if(row.status !== 'Testimony') toggleStatus(row.id, row.status) }}
+                          disabled={row.status === 'Testimony'}
                         >
-                          <span className="material-symbols-outlined">{row.status === 'Pending' ? 'church' : 'undo'}</span>
+                          <span className={`material-symbols-outlined ${row.status === 'Testimony' ? 'opacity-30' : ''}`}>{row.status === 'Pending' ? 'church' : row.status === 'Testimony' ? 'campaign' : 'undo'}</span>
                         </button>
                         <button 
                           className="rounded-xl p-2 text-[#59413d] transition-all hover:bg-[#e5e2e1] hover:text-[#1c1b1b]" 

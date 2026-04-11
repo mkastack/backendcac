@@ -77,13 +77,33 @@ export default function PrayerPage() {
     }
   };
 
-  const handleTestimonySubmit = (e: React.FormEvent) => {
+  const handleTestimonySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setTestimonySubmitted(true);
-    toast({
-      title: "Testimony Submitted",
-      description: "Thank you for sharing what God has done!",
-    });
+
+    const { error } = await supabase
+      .from('prayer_requests')
+      .insert([
+        {
+          name: testimonyForm.name || "Anonymous",
+          request: testimonyForm.testimony,
+          status: 'Testimony',
+          date: new Date().toISOString().split('T')[0]
+        }
+      ]);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Could not submit testimony: " + error.message,
+        variant: "destructive"
+      });
+    } else {
+      setTestimonySubmitted(true);
+      toast({
+        title: "Testimony Submitted",
+        description: "Thank you for sharing what God has done!",
+      });
+    }
   };
 
   return (

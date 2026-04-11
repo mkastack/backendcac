@@ -63,6 +63,8 @@ export default function Sermons() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [activeMenuId, setActiveMenuId] = useState(null);
 
   useEffect(() => {
     fetchSermons();
@@ -110,7 +112,7 @@ export default function Sermons() {
     [rows, query, speaker],
   );
 
-  const addSermon = async (e) => {
+  const saveSermon = async (e) => {
     e.preventDefault();
     if (!form.title || !form.speaker) {
       setNotice('Please add title and speaker.');
@@ -127,27 +129,69 @@ export default function Sermons() {
       thumbnail_url: form.thumbnail_url || null
     };
 
-    const { error } = await supabase
-      .from('sermons')
-      .insert([sermonData]);
+    let error;
+
+    if (editingId) {
+      const { error: updateError } = await supabase
+        .from('sermons')
+        .update(sermonData)
+        .eq('id', editingId);
+      error = updateError;
+    } else {
+      const { error: insertError } = await supabase
+        .from('sermons')
+        .insert([sermonData]);
+      error = insertError;
+    }
 
     if (error) {
       setNotice('Error saving sermon: ' + error.message);
     } else {
-      setNotice('Sermon uploaded successfully.');
+      setNotice(editingId ? 'Sermon updated successfully.' : 'Sermon uploaded successfully.');
       fetchSermons();
-      setForm({
-        title: '',
-        speaker: '',
-        series: '',
-        date: '',
-        scripture: '',
-        type: 'Video',
-        mediaUrl: '',
-        description: '',
-      });
-      setUploadOpen(false);
+      resetForm();
     }
+  };
+
+  const deleteSermon = async (id) => {
+    if(!window.confirm('Are you sure you want to delete this sermon?')) return;
+    const { error } = await supabase.from('sermons').delete().eq('id', id);
+    if (error) setNotice('Error deleting: ' + error.message);
+    else {
+      setNotice('Sermon deleted successfully.');
+      fetchSermons();
+    }
+  };
+
+  const startEdit = (row) => {
+    setForm({
+      title: row.title || '',
+      speaker: row.speaker || '',
+      series: '',
+      date: row.date || '',
+      scripture: '',
+      type: row.video_url ? 'Video' : 'Audio',
+      mediaUrl: row.video_url || row.audio_url || '',
+      description: row.description || '',
+    });
+    setEditingId(row.id);
+    setUploadOpen(true);
+    setActiveMenuId(null);
+  };
+
+  const resetForm = () => {
+    setForm({
+      title: '',
+      speaker: '',
+      series: '',
+      date: '',
+      scripture: '',
+      type: 'Video',
+      mediaUrl: '',
+      description: '',
+    });
+    setEditingId(null);
+    setUploadOpen(false);
   };
 
   return (
@@ -196,42 +240,6 @@ export default function Sermons() {
         </div>
       </section>
 
-      <section className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
-        <div className="group relative flex h-48 flex-col justify-between overflow-hidden rounded-3xl bg-[#ffdad5] p-8">
-          <span className="text-xs font-bold uppercase tracking-widest text-[#9e2016]">Growth</span>
-          <div>
-            <div className="text-4xl font-extrabold text-[#410000]">{(rows.length * 85).toLocaleString()}</div>
-            <div className="font-medium text-[#8e130c]">Monthly Media Plays</div>
-          </div>
-          <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-[#410000]/10">
-            <div className="h-full bg-[#9e2016] transition-all duration-500" style={{ width: `${Math.min(((rows.length * 85) / 5000) * 100, 100)}%` }} />
-          </div>
-          <span className="absolute -bottom-4 -right-4 text-9xl text-[#9e2016]/10">↗</span>
-        </div>
-        <div className="group relative flex h-48 flex-col justify-between overflow-hidden rounded-3xl bg-[#e5e2e1] p-8">
-          <span className="text-xs font-bold uppercase tracking-widest text-[#5e5e5e]">Reach</span>
-          <div>
-            <div className="text-4xl font-extrabold text-[#1c1b1b]">{Math.min(rows.length + 5, 195)}</div>
-            <div className="font-medium text-[#59413d]">Countries Tuning In</div>
-          </div>
-          <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-black/5">
-            <div className="h-full bg-blue-600 transition-all duration-500" style={{ width: `${Math.min(((rows.length + 5) / 80) * 100, 100)}%` }} />
-          </div>
-          <span className="absolute -bottom-4 -right-4 text-9xl text-[#5e5e5e]/10">◍</span>
-        </div>
-        <div className="group relative flex h-48 flex-col justify-between overflow-hidden rounded-3xl bg-[#ebe0de] p-8">
-          <span className="text-xs font-bold uppercase tracking-widest text-[#57504f]">Archive</span>
-          <div>
-            <div className="text-4xl font-extrabold text-[#1f1a1a]">{rows.length.toLocaleString()}</div>
-            <div className="font-medium text-[#4c4544]">Total Uploaded Items</div>
-          </div>
-          <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-black/5">
-            <div className="h-full bg-emerald-600 transition-all duration-500" style={{ width: `${Math.min((rows.length / 100) * 100, 100)}%` }} />
-          </div>
-          <span className="absolute -bottom-4 -right-4 text-9xl text-[#57504f]/10">▣</span>
-        </div>
-      </section>
-
       <div className="rounded-[2rem] bg-[#f6f3f2] p-4 lg:p-8">
         <div className="overflow-x-auto">
           <table className="w-full border-separate border-spacing-y-3">
@@ -246,7 +254,7 @@ export default function Sermons() {
             </thead>
             <tbody>
               {filteredRows.map((row) => (
-                <tr key={row.title} className="group rounded-2xl bg-white shadow-sm transition-all hover:shadow-md">
+                <tr key={row.id} className="group rounded-2xl bg-white shadow-sm transition-all hover:shadow-md">
                   <td className="rounded-l-2xl px-6 py-5">
                     <div className="flex items-center gap-4">
                       <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl bg-[#eae7e7]">
@@ -276,44 +284,38 @@ export default function Sermons() {
                       ))}
                     </div>
                   </td>
-                  <td className="rounded-r-2xl px-6 py-5 text-right">
-                    <button className="rounded-full p-2 text-[#8d706c] transition-colors hover:bg-[#eae7e7]" onClick={() => setNotice(`Actions for "${row.title}" opened.`)}>⋮</button>
+                  <td className="rounded-r-2xl px-6 py-5 text-right relative">
+                    <button 
+                      className="rounded-full p-2 text-[#8d706c] transition-colors hover:bg-[#eae7e7]" 
+                      onClick={() => setActiveMenuId(activeMenuId === row.id ? null : row.id)}
+                    >
+                      ⋮
+                    </button>
+                    {activeMenuId === row.id && (
+                      <div className="absolute right-8 top-12 z-50 flex w-40 flex-col overflow-hidden rounded-xl bg-white shadow-xl border border-neutral-100">
+                        <button onClick={() => startEdit(row)} className="px-4 py-3 text-left text-sm font-medium text-[#1c1b1b] hover:bg-neutral-50 transition-colors">Edit Sermon</button>
+                        <button onClick={() => { deleteSermon(row.id); setActiveMenuId(null); }} className="px-4 py-3 text-left text-sm font-bold text-red-600 hover:bg-red-50 transition-colors">Delete Sermon</button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-
-        <div className="mt-8 flex flex-col items-center justify-between gap-4 bg-[#fcf9f8] px-2 pt-6 md:flex-row">
-          <p className="text-sm text-[#59413d]">
-            Showing <span className="font-bold text-[#1c1b1b]">{Math.min(filteredRows.length, 4)}</span> of {filteredRows.length} sermons
-          </p>
-          <div className="flex items-center gap-2">
-            <button className="flex h-10 w-10 items-center justify-center rounded-full bg-[#e5e2e1] text-[#1c1b1b]" onClick={() => setNotice('Previous page')}>‹</button>
-            <button className="flex h-10 w-10 items-center justify-center rounded-full bg-[#9e2016] font-bold text-white">1</button>
-            <button className="flex h-10 w-10 items-center justify-center rounded-full text-[#59413d] hover:bg-[#e5e2e1]" onClick={() => setNotice('Page 2')}>2</button>
-            <button className="flex h-10 w-10 items-center justify-center rounded-full text-[#59413d] hover:bg-[#e5e2e1]" onClick={() => setNotice('Page 3')}>3</button>
-            <span className="px-2">...</span>
-            <button className="flex h-10 w-10 items-center justify-center rounded-full text-[#59413d] hover:bg-[#e5e2e1]" onClick={() => setNotice('Page 32')}>32</button>
-            <button className="flex h-10 w-10 items-center justify-center rounded-full bg-[#e5e2e1] text-[#1c1b1b]" onClick={() => setNotice('Next page')}>›</button>
-          </div>
-        </div>
       </div>
 
       {uploadOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
           <div className="w-full max-w-3xl overflow-hidden rounded-3xl bg-white shadow-2xl transition-all">
-            {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-neutral-100 px-8 py-6">
-              <h2 className="text-2xl font-extrabold tracking-tight text-[#1c1b1b]">Upload New Sermon</h2>
+              <h2 className="text-2xl font-extrabold tracking-tight text-[#1c1b1b]">{editingId ? 'Edit Sermon' : 'Upload New Sermon'}</h2>
               <button className="rounded-full p-2 hover:bg-neutral-100" onClick={() => setUploadOpen(false)}>
                 <span className="material-symbols-outlined text-[#8d706c]">close</span>
               </button>
             </div>
-            {/* Modal Body / Form */}
             <div className="scrollbar-hide max-h-[60vh] overflow-y-auto px-8 py-8">
-              <form className="space-y-6" id="sermon-form" onSubmit={addSermon}>
+              <form className="space-y-6" id="sermon-form" onSubmit={saveSermon}>
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   {/* Sermon Title */}
                   <div className="space-y-2 md:col-span-2">
