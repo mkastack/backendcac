@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import churchLogo from '../images/church-logo.png';
+import { supabase } from '../../lib/supabase';
 
 const links = [
   ['Home', '/admin/dashboard'],
@@ -17,12 +18,72 @@ export default function Header() {
   const [open, setOpen] = useState(false);
   const [dark, setDark] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const navigate = useNavigate();
+
+  const [notifications, setNotifications] = useState([
+    { id: 1, title: 'System initialized', description: 'Connected to Supabase live sync.', time: 'Just now', type: 'system', unread: false },
+  ]);
+
+  useEffect(() => {
+    // 1. Subscribe to new prayer requests
+    const prayerSub = supabase
+      .channel('header_prayer_notifs')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'prayer_requests' }, (payload) => {
+        const newNotif = {
+          id: Date.now(),
+          title: 'New Prayer Request',
+          description: `${payload.new.name}: ${payload.new.request.substring(0, 40)}...`,
+          time: 'Just now',
+          type: 'prayer',
+          unread: true
+        };
+        setNotifications(prev => [newNotif, ...prev]);
+      })
+      .subscribe();
+
+    // 2. Subscribe to new members
+    const memberSub = supabase
+      .channel('header_member_notifs')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'members' }, (payload) => {
+        const newNotif = {
+          id: Date.now(),
+          title: 'New Member Registered',
+          description: `${payload.new.full_name} has joined the congregation.`,
+          time: 'Just now',
+          type: 'member',
+          unread: true
+        };
+        setNotifications(prev => [newNotif, ...prev]);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(prayerSub);
+      supabase.removeChannel(memberSub);
+    };
+  }, []);
+
+  const unreadCount = notifications.filter(n => n.unread).length;
 
   const handleLogout = () => {
     // Add any logout logic here if needed
     setProfileOpen(false);
     navigate('/admin');
+  };
+
+  const toggleNotifications = () => {
+    setNotificationsOpen(!notificationsOpen);
+    setProfileOpen(false);
+  };
+
+  const toggleProfile = () => {
+    setProfileOpen(!profileOpen);
+    setNotificationsOpen(false);
+  };
+
+  const markAllRead = () => {
+    setNotifications(notifications.map(n => ({ ...n, unread: false })));
   };
 
   return (
@@ -58,13 +119,55 @@ export default function Header() {
 
         <div className="flex items-center gap-3">
           {/* Notifications */}
-          <button className="relative rounded-full p-2 text-neutral-600 hover:bg-neutral-100 transition-colors">
-            <span className="text-xl">🔔</span>
-            <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#9e2016]"></span>
-            </span>
-          </button>
+          <div className="relative">
+            <button 
+              onClick={toggleNotifications}
+              className="relative rounded-full p-2 text-neutral-600 hover:bg-neutral-100 transition-colors"
+            >
+              <span className="text-xl">🔔</span>
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#9e2016]"></span>
+                </span>
+              )}
+            </button>
+
+            {notificationsOpen && (
+              <div className="absolute right-0 mt-2 w-80 origin-top-right rounded-2xl bg-white p-2 shadow-xl ring-1 ring-black/5 focus:outline-none z-[60]">
+                <div className="px-4 py-3 border-b border-neutral-100 mb-1 flex justify-between items-center">
+                  <h3 className="text-sm font-bold text-[#1c1b1b]">Notifications</h3>
+                  {unreadCount > 0 && (
+                    <button onClick={markAllRead} className="text-[10px] font-bold text-[#9e2016] uppercase tracking-wider hover:underline">
+                      Mark all as read
+                    </button>
+                  )}
+                </div>
+                <div className="max-h-[320px] overflow-y-auto">
+                  {notifications.length > 0 ? (
+                    notifications.map((n) => (
+                      <div key={n.id} className={`p-3 rounded-xl transition-colors hover:bg-[#f6f3f2] cursor-pointer mb-1 ${n.unread ? 'bg-[#9e2016]/5' : ''}`}>
+                        <div className="flex justify-between items-start mb-1">
+                          <p className={`text-xs ${n.unread ? 'font-bold text-[#1c1b1b]' : 'font-medium text-neutral-600'}`}>{n.title}</p>
+                          <span className="text-[10px] text-neutral-400">{n.time}</span>
+                        </div>
+                        <p className="text-[11px] text-neutral-500 line-clamp-2 leading-relaxed">{n.description}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="py-8 text-center">
+                      <p className="text-sm text-neutral-400">All caught up!</p>
+                    </div>
+                  )}
+                </div>
+                <div className="p-2 border-t border-neutral-100 mt-1">
+                  <button className="w-full py-2 text-xs font-bold text-neutral-500 hover:text-[#9e2016] transition-colors">
+                    View all activity
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           <button
             onClick={() => setDark(!dark)}
@@ -77,7 +180,7 @@ export default function Header() {
           {/* Profile Dropdown */}
           <div className="relative">
             <button
-              onClick={() => setProfileOpen(!profileOpen)}
+              onClick={toggleProfile}
               className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-[#9e2016]/20 bg-white shadow-sm hover:border-[#9e2016]/40 transition-all focus:outline-none"
             >
               <img src={churchLogo} alt="Profile" className="h-full w-full object-cover p-1" />
@@ -98,6 +201,13 @@ export default function Header() {
                 >
                   <span className="text-lg">⚙</span> Settings
                 </button>
+                <Link
+                  to="/"
+                  onClick={() => setProfileOpen(false)}
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-[#f6f3f2] transition-colors"
+                >
+                  <span className="text-lg">🌐</span> View Website
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-bold text-[#9e2016] hover:bg-red-50 transition-colors"

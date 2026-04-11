@@ -4,21 +4,10 @@ import { Footer } from "@/components/layout/Footer";
 import { Calendar, MapPin, Clock, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-church.jpg";
+import { supabase } from "@/lib/supabase";
+import { useState, useEffect } from "react";
 
-const events = [
-  {
-    id: 1,
-    title: "Solid Foundation 2026",
-    date: "Jan 10, 2026",
-    time: "6:00 PM - 8:30 PM",
-    location: "Church Premises",
-    description: "An evening of worship, and experience faith, hope, and transformation.",
-    category: "Youth",
-    type: "Join Now",
-    featured: true,
-  },
-
-];
+// Seed events removed, now fetching from Supabase
 
 const categoryColors: Record<string, string> = {
   Prayer: "bg-blue-100/10 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400",
@@ -32,6 +21,24 @@ const categoryColors: Record<string, string> = {
 const defaultCategoryColor = "bg-muted text-muted-foreground";
 
 export default function EventsPage() {
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchEvents() {
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .order('date', { ascending: true });
+      
+      if (!error && data) {
+        setEvents(data);
+      }
+      setLoading(false);
+    }
+    fetchEvents();
+  }, []);
+
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -68,57 +75,77 @@ export default function EventsPage() {
         {/* Events Grid */}
         <section className="py-20 bg-church-cream">
           <div className="container mx-auto px-6">
-            <div className="grid lg:grid-cols-2 gap-8">
-              {events.map((event, index)  => (
-                <motion.div
-                  key={event.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className={`bg-card border border-border rounded-2xl p-6 sm:p-8 shadow-[0_3px_10px_rgba(0,0,0,0.08)] hover:!shadow-[0_5px_15px_rgba(0,0,0,0.15)] hover:!-translate-y-[3px] transition-all duration-300 ${
-                    event.featured ? "border-l-4 border-l-church-red lg:col-span-2" : ""
-                  }`}
-                >
-                  <div className={`flex flex-col ${event.featured ? "lg:flex-row lg:gap-8" : ""}`}>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-4">
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${categoryColors[event.category] || defaultCategoryColor}`}>
-                          {event.category}
-                        </span>
-                        {event.featured && (
-                          <span className="px-3 py-1 bg-church-gold/10 text-church-red rounded-full text-xs font-semibold">
-                            Featured
+            <div className="flex flex-col gap-8">
+              {loading ? (
+                <div className="lg:col-span-2 text-center py-12 text-muted-foreground">Loading events...</div>
+              ) : events.length > 0 ? (
+                events.map((event, index)  => (
+                  <motion.div
+                    key={event.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                    className={`bg-card relative border border-border rounded-2xl overflow-hidden shadow-[0_3px_10px_rgba(0,0,0,0.08)] hover:!shadow-[0_12px_30px_rgba(0,0,0,0.12)] transition-all duration-300 w-full ${
+                      event.is_featured ? "ring-1 ring-[#ba1a1a]/10" : ""
+                    }`}
+                  >
+                    {/* Left Accent Bar */}
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#ba1a1a]" />
+
+                    <div className="p-5 sm:p-6 flex flex-col md:flex-row gap-6">
+                      {/* Left Content */}
+                      <div className="flex-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                          <span className={`px-4 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest ${categoryColors[event.category] || defaultCategoryColor}`}>
+                            {event.category}
                           </span>
-                        )}
+                          {event.is_featured && (
+                            <span className="px-4 py-1.5 bg-[#ffdad5] text-[#ba1a1a] rounded-full text-[10px] font-extrabold uppercase tracking-widest">
+                              Featured
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="font-serif font-bold text-xl sm:text-2xl text-[#1c1b1b] mb-2 leading-tight group-hover:text-[#ba1a1a] transition-colors">
+                          {event.title}
+                        </h3>
+                        <p className="text-[#5e5e5e] text-base leading-relaxed mb-4 max-w-2xl">{event.description}</p>
                       </div>
-                      <h3 className="font-serif font-bold text-xl sm:text-2xl text-foreground mb-3">
-                        {event.title}
-                      </h3>
-                      <p className="text-muted-foreground mb-6">{event.description}</p>
-                    </div>
-                    <div className={`${event.featured ? "lg:w-72 lg:border-l lg:border-border lg:pl-8" : ""}`}>
-                      <div className="space-y-3 text-sm">
-                        <div className="flex items-center gap-3 text-foreground">
-                          <Calendar className="w-5 h-5 text-church-red shrink-0" />
-                          <span>{event.date}</span>
+
+                      {/* Right Details Panel */}
+                      <div className="md:w-[280px] flex flex-col sm:flex-row md:flex-col justify-between gap-4 md:border-l md:border-border md:pl-6">
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-4 text-[#1c1b1b]">
+                            <div className="p-2 bg-neutral-100 rounded-lg text-[#ba1a1a]">
+                              <Calendar className="w-5 h-5 shrink-0" />
+                            </div>
+                            <span className="font-semibold text-sm">{event.date}</span>
+                          </div>
+                          <div className="flex items-center gap-4 text-[#1c1b1b]">
+                            <div className="p-2 bg-neutral-100 rounded-lg text-[#ba1a1a]">
+                              <Clock className="w-5 h-5 shrink-0" />
+                            </div>
+                            <span className="font-semibold text-sm">{event.time}</span>
+                          </div>
+                          <div className="flex items-center gap-4 text-[#1c1b1b]">
+                            <div className="p-2 bg-neutral-100 rounded-lg text-[#ba1a1a]">
+                              <MapPin className="w-5 h-5 shrink-0" />
+                            </div>
+                            <span className="font-semibold text-sm">{event.location}</span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3 text-foreground">
-                          <Clock className="w-5 h-5 text-church-red shrink-0" />
-                          <span>{event.time}</span>
-                        </div>
-                        <div className="flex items-center gap-3 text-foreground">
-                          <MapPin className="w-5 h-5 text-church-red shrink-0" />
-                          <span>{event.location}</span>
-                        </div>
+
+                        <Button 
+                          className="w-full h-12 bg-[#1e3a8a] text-white hover:bg-[#1e40af] rounded-lg font-bold shadow-md shadow-[#1e3a8a]/20 transition-all active:scale-[0.98]"
+                        >
+                          Join Now
+                        </Button>
                       </div>
-                      <Button variant="churchPrimary" className="w-full mt-6">
-                       {event.type}
-                      </Button>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                ))) : (
+                <div className="lg:col-span-2 text-center py-12 text-muted-foreground">Check back soon for upcoming events!</div>
+              )}
             </div>
           </div>
         </section>

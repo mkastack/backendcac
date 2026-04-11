@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
@@ -8,77 +8,44 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-church.jpg";
 import Image from "@/assets/2.jpeg"
+import { supabase } from "@/lib/supabase";
 
-const videoSermons = [
-  {
-    id: 1,
-    title: "Walking in Faith: Trusting God's Plan",
-    preacher: "Pastor James Mensah",
-    date: "Jan 1, 2026",
-    duration: "45 min",
-    topic: "Faith",
-    thumbnail: Image,
-    videoUrl: "#",
-  },
-  {
-    id: 2,
-    title: "The Power of Prayer in Difficult Times",
-    preacher: "Elder Grace Owusu",
-    date: "Dec 29, 2025",
-    duration: "38 min",
-    topic: "Prayer",
-    thumbnail: Image,
-    videoUrl: "#",
-  },
-  {
-    id: 3,
-    title: "Living a Life of Purpose",
-    preacher: "Pastor James Mensah",
-    date: "Dec 25, 2025",
-    duration: "52 min",
-    topic: "Purpose",
-    thumbnail: Image,
-    videoUrl: "#",
-  },
-  {
-    id: 4,
-    title: "The Joy of Salvation",
-    preacher: "Pastor James Mensah",
-    date: "Dec 22, 2025",
-    duration: "41 min",
-    topic: "Salvation",
-    thumbnail: Image,
-    videoUrl: "#",
-  },
-  {
-    id: 5,
-    title: "Building Strong Families",
-    preacher: "Elder Grace Owusu",
-    date: "Dec 18, 2025",
-    duration: "48 min",
-    topic: "Family",
-    thumbnail: Image,
-    videoUrl: "#",
-  },
-  {
-    id: 6,
-    title: "Overcoming Fear with Faith",
-    preacher: "Pastor James Mensah",
-    date: "Dec 15, 2025",
-    duration: "44 min",
-    topic: "Faith",
-    thumbnail: Image,
-    videoUrl: "#",
-  },
-];
+// Seed data removed, now fetching from Supabase
 
 const topics = ["All Topics", "Faith", "Prayer", "Purpose", "Salvation", "Family"];
 
 export default function VideoSermonsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTopic, setSelectedTopic] = useState("All Topics");
+  const [sermons, setSermons] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredSermons = videoSermons.filter((sermon) => {
+  useEffect(() => {
+    async function fetchSermons() {
+      const { data, error } = await supabase
+        .from('sermons')
+        .select('*')
+        .not('video_url', 'is', null)
+        .order('date', { ascending: false });
+      
+      if (!error && data) {
+        setSermons(data.map(s => ({
+          id: s.id,
+          title: s.title,
+          preacher: s.speaker,
+          date: new Date(s.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          duration: "Sermon", // Or calculate if available
+          topic: s.type || "General",
+          thumbnail: s.thumbnail_url || Image,
+          videoUrl: s.video_url
+        })));
+      }
+      setLoading(false);
+    }
+    fetchSermons();
+  }, []);
+
+  const filteredSermons = sermons.filter((sermon) => {
     const matchesSearch = sermon.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       sermon.preacher.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesTopic = selectedTopic === "All Topics" || sermon.topic === selectedTopic;
@@ -155,7 +122,11 @@ export default function VideoSermonsPage() {
         {/* Sermons Grid */}
         <section className="py-16 bg-church-cream">
           <div className="container mx-auto px-6">
-            {filteredSermons.length > 0 ? (
+            {loading ? (
+              <div className="text-center py-20">
+                <p className="text-muted-foreground text-lg">Loading video sermons...</p>
+              </div>
+            ) : filteredSermons.length > 0 ? (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {filteredSermons.map((sermon, index) => (
                   <motion.article

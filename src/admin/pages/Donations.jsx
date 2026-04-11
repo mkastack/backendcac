@@ -1,92 +1,56 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { supabase } from '../../lib/supabase';
 
 export default function Donations() {
   const [purposeFilter, setPurposeFilter] = useState('All Purposes');
   const [dateFilter, setDateFilter] = useState('October 2023');
+  const [donations, setDonations] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const allDonations = [
-    {
-      initials: 'SA',
-      name: 'Samuel Adeyemi',
-      amount: '$1,200.00',
-      date: 'Oct 24, 2023',
-      dateFilter: 'October 2023',
-      methodIcon: 'credit_card',
-      methodText: 'Visa ending in 4242',
-      purpose: 'Tithe',
-      status: 'Completed',
-      statusColor: 'green-500',
-      statusBg: 'bg-green-500',
-      statusTextColor: 'text-green-600',
-      avatar: null,
-      initialsBg: 'bg-[#fee2e1]',
-      initialsText: 'text-[#9e2016]',
-    },
-    {
-      name: 'Grace Thompson',
-      amount: '$500.00',
-      date: 'Oct 22, 2023',
-      dateFilter: 'October 2023',
-      methodIcon: 'account_balance_wallet',
-      methodText: 'Direct Deposit',
-      purpose: 'Mission Fund',
-      status: 'Completed',
-      statusColor: 'green-500',
-      statusBg: 'bg-green-500',
-      statusTextColor: 'text-green-600',
-      avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCfvPktfSYxY3ROJnBbjYylEzW7qIUjDKiCVYXVZIq9vXBIPG7B05hCcXzY22jFyWbrl97zzvu4S3wK7OkMlJ6WCHGjcUaY1RceGx5kCoc7bDlLME-niJNwaXwkf1fCQcB89qmYo4gKA6UKqNs9m8ejWfRmPcoQddFaDFQH_enJ0pSHH2rhBZtPi7r3cCGYJS-NchOn4cv4OyYUS5isewuffjrLQ3uD8CrFox_Edo7beRSRHuwc9b8UTSnkZKbPHJ8WuAaXxzaC4S0q',
-    },
-    {
-      initials: 'JO',
-      name: 'James Oke',
-      amount: '$250.00',
-      date: 'Oct 21, 2023',
-      dateFilter: 'October 2023',
-      methodIcon: 'payments',
-      methodText: 'Cash Receipt',
-      purpose: 'Offering',
-      status: 'Completed',
-      statusColor: 'green-500',
-      statusBg: 'bg-green-500',
-      statusTextColor: 'text-green-600',
-      avatar: null,
-      initialsBg: 'bg-neutral-100',
-      initialsText: 'text-neutral-400',
-    },
-    {
-      initials: 'MB',
-      name: 'Mary Balogun',
-      amount: '$2,000.00',
-      date: 'Oct 20, 2023',
-      dateFilter: 'October 2023',
-      methodIcon: 'credit_card',
-      methodText: 'Mastercard',
-      purpose: 'Building Fund',
-      status: 'Processing',
-      statusColor: 'amber-500',
-      statusBg: 'bg-amber-500',
-      statusTextColor: 'text-amber-500',
-      avatar: null,
-      initialsBg: 'bg-[#fee2e1]',
-      initialsText: 'text-[#9e2016]',
-    },
-    {
-      name: 'David Wilson',
-      amount: '$100.00',
-      date: 'Oct 19, 2023',
-      dateFilter: 'October 2023',
-      methodIcon: 'contactless',
-      methodText: 'Apple Pay',
-      purpose: 'Tithe',
-      status: 'Completed',
-      statusColor: 'green-500',
-      statusBg: 'bg-green-500',
-      statusTextColor: 'text-green-600',
-      avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuATHm63ay4dkiibEwuAZwAOKRaDSZgTi8Q2kEIM8qbHAhWYONeg4EZiopl81xxDZtuOQR1Oxy3t-gXE0FGYPLEQY83dg1VtvCNA9F8IyLnfjpPaT-Bq22IO2YBjFGVroMb73CLPSG77GLGjiKa5n4aqXalhPpFFwluHk0ChjPMHo0vUA509N3141b-HkSy8BszCE-m2_YCD0Cgoiik7k6Ss4NqxgKgdmfEdRKPuAuUcV0CQRfO9p-_sGnySVqBCEb1AW4UgtrExFair',
+  useEffect(() => {
+    fetchDonations();
+  }, []);
+
+  const fetchDonations = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('donations')
+      .select('*')
+      .order('date', { ascending: false });
+    
+    if (!error && data) {
+      setDonations(data.map(d => ({
+        ...d,
+        name: d.donor_name,
+        amount: `$${d.amount.toLocaleString()}`,
+        date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+        dateFilter: new Date(d.date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+        methodIcon: 'payments',
+        methodText: 'General Payment',
+        status: 'Completed',
+        statusBg: 'bg-green-500',
+        statusTextColor: 'text-green-600',
+        initials: d.donor_name.split(' ').slice(0, 2).map(n => n[0]).join(''),
+        initialsBg: 'bg-[#fee2e1]',
+        initialsText: 'text-[#9e2016]'
+      })));
     }
-  ];
+    setLoading(false);
+  };
 
-  const filteredDonations = allDonations.filter((d) => {
+  const totals = useMemo(() => {
+    const res = { tithe: 0, mission: 0, building: 0, total: 0 };
+    donations.forEach(d => {
+      const val = parseFloat(d.amount.replace(/[$,]/g, ''));
+      res.total += val;
+      if (d.purpose === 'Tithe') res.tithe += val;
+      if (d.purpose === 'Mission Fund') res.mission += val;
+      if (d.purpose === 'Building Fund') res.building += val;
+    });
+    return res;
+  }, [donations]);
+
+  const filteredDonations = donations.filter((d) => {
     const pMatch = purposeFilter === 'All Purposes' || d.purpose === purposeFilter;
     const dMatch = dateFilter === 'All Dates' || d.dateFilter === dateFilter || true; // Placeholder for date logic
     return pMatch && dMatch;
@@ -129,12 +93,8 @@ export default function Donations() {
       <section className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
         <div className="bg-white p-8 rounded-2xl flex flex-col justify-between min-h-[160px] relative overflow-hidden shadow-sm border border-neutral-100">
           <div className="relative z-10">
-            <p className="text-[11px] font-bold text-neutral-500 uppercase tracking-[0.1em] mb-4">Total This Month</p>
-            <h2 className="text-4xl font-extrabold text-[#9e2016] font-headline">$42,850.00</h2>
-          </div>
-          <div className="relative z-10 flex items-center gap-1.5 text-xs text-green-600 font-bold mt-2">
-            <span className="material-symbols-outlined text-sm">trending_up</span>
-            <span>12% from last month</span>
+            <p className="text-[11px] font-bold text-neutral-500 uppercase tracking-[0.1em] mb-4">Total Received</p>
+            <h2 className="text-4xl font-extrabold text-[#9e2016] font-headline">${totals.total.toLocaleString()}</h2>
           </div>
           <div className="absolute -right-4 -bottom-4 opacity-[0.03]">
             <span className="material-symbols-outlined text-9xl text-neutral-900" style={{ fontVariationSettings: "'FILL' 1" }}>payments</span>
@@ -144,30 +104,30 @@ export default function Donations() {
         <div className="bg-neutral-50/50 p-8 rounded-2xl flex flex-col justify-between shadow-sm border border-neutral-100">
           <div>
             <p className="text-[11px] font-bold text-neutral-500 uppercase tracking-[0.1em] mb-4">Tithe</p>
-            <h2 className="text-3xl font-bold text-[#1c1b1b] font-headline">$28,400.00</h2>
+            <h2 className="text-3xl font-bold text-[#1c1b1b] font-headline">${totals.tithe.toLocaleString()}</h2>
           </div>
           <div className="w-full bg-neutral-200 h-1.5 rounded-full mt-6">
-            <div className="bg-[#9e2016] h-1.5 rounded-full" style={{ width: '65%' }}></div>
+            <div className="bg-[#9e2016] h-1.5 rounded-full" style={{ width: `${(totals.tithe / totals.total || 0) * 100}%` }}></div>
           </div>
         </div>
         
         <div className="bg-neutral-50/50 p-8 rounded-2xl flex flex-col justify-between shadow-sm border border-neutral-100">
           <div>
             <p className="text-[11px] font-bold text-neutral-500 uppercase tracking-[0.1em] mb-4">Mission Fund</p>
-            <h2 className="text-3xl font-bold text-[#1c1b1b] font-headline">$8,250.00</h2>
+            <h2 className="text-3xl font-bold text-[#1c1b1b] font-headline">${totals.mission.toLocaleString()}</h2>
           </div>
           <div className="w-full bg-neutral-200 h-1.5 rounded-full mt-6">
-            <div className="bg-[#9e2016] h-1.5 rounded-full" style={{ width: '40%' }}></div>
+            <div className="bg-[#9e2016] h-1.5 rounded-full" style={{ width: `${(totals.mission / totals.total || 0) * 100}%` }}></div>
           </div>
         </div>
         
         <div className="bg-neutral-50/50 p-8 rounded-2xl flex flex-col justify-between shadow-sm border border-neutral-100">
           <div>
             <p className="text-[11px] font-bold text-neutral-500 uppercase tracking-[0.1em] mb-4">Building Fund</p>
-            <h2 className="text-3xl font-bold text-[#1c1b1b] font-headline">$6,200.00</h2>
+            <h2 className="text-3xl font-bold text-[#1c1b1b] font-headline">${totals.building.toLocaleString()}</h2>
           </div>
           <div className="w-full bg-neutral-200 h-1.5 rounded-full mt-6">
-            <div className="bg-[#9e2016] h-1.5 rounded-full" style={{ width: '25%' }}></div>
+            <div className="bg-[#9e2016] h-1.5 rounded-full" style={{ width: `${(totals.building / totals.total || 0) * 100}%` }}></div>
           </div>
         </div>
       </section>

@@ -1,7 +1,94 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
+import { uploadChurchAsset } from '../../lib/storage';
 
 export default function Events() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [notice, setNotice] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [form, setForm] = useState({
+    title: '',
+    date: '',
+    time: '',
+    location: '',
+    description: '',
+    category: 'General',
+    image_url: ''
+  });
+
+  useEffect(() => {
+    fetchEvents();
+    fetchMemberStats();
+
+    // Subscribe to events
+    const eventChannel = supabase
+      .channel('admin_events_sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => {
+        fetchEvents();
+      })
+      .subscribe();
+
+    // Subscribe to members for registration counts
+    const memberChannel = supabase
+      .channel('admin_event_member_sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'members' }, () => {
+        fetchMemberStats();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(eventChannel);
+      supabase.removeChannel(memberChannel);
+    };
+  }, []);
+
+  const [memberStats, setMemberStats] = useState({
+    total: 0,
+    visitors: 0
+  });
+
+  const fetchMemberStats = async () => {
+    const { data: mData } = await supabase.from('members').select('category');
+    if (mData) {
+      setMemberStats({
+        total: mData.length,
+        visitors: mData.filter(m => m.category === 'Visitor').length
+      });
+    }
+  };
+
+  const fetchEvents = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .order('date', { ascending: true });
+    
+    if (error) {
+      setNotice('Error fetching events: ' + error.message);
+    } else {
+      setEvents(data);
+    }
+    setLoading(false);
+  };
+
+  const handleSaveEvent = async (e) => {
+    e.preventDefault();
+    const { error } = await supabase
+      .from('events')
+      .insert([form]);
+
+    if (error) {
+      setNotice('Error saving event: ' + error.message);
+    } else {
+      setNotice('Event saved successfully.');
+      fetchEvents();
+      setIsModalOpen(false);
+      setForm({ title: '', date: '', time: '', location: '', description: '', category: 'General', image_url: '' });
+    }
+  };
 
   return (
     <main className="pb-12 px-4 sm:px-8 max-w-screen-2xl mx-auto">
@@ -31,10 +118,10 @@ export default function Events() {
           <div>
             <h3 className="text-[#5e5e5e] text-sm mb-1 font-medium font-body">Total Events</h3>
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-extrabold text-[#1c1b1b] tracking-tighter font-headline">24</span>
+              <span className="text-4xl font-extrabold text-[#1c1b1b] tracking-tighter font-headline">{events.length}</span>
             </div>
             <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
-              <div className="h-full bg-blue-500" style={{ width: '60%' }} />
+              <div className="h-full bg-blue-500 transition-all duration-500" style={{ width: `${Math.min((events.length / 50) * 100, 100)}%` }} />
             </div>
           </div>
         </div>
@@ -50,11 +137,13 @@ export default function Events() {
           <div>
             <h3 className="text-[#5e5e5e] text-sm mb-1 font-medium font-body">Upcoming This Month</h3>
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-extrabold text-[#1c1b1b] tracking-tighter font-headline">08</span>
-              <span className="text-sm text-[#5e5e5e]">next 30 days</span>
+              <span className="text-4xl font-extrabold text-[#1c1b1b] tracking-tighter font-headline">
+                {events.filter(e => new Date(e.date) > new Date()).length.toString().padStart(2, '0')}
+              </span>
+              <span className="text-sm text-[#5e5e5e]">active</span>
             </div>
             <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
-              <div className="h-full bg-indigo-500" style={{ width: '45%' }} />
+              <div className="h-full bg-indigo-500 transition-all duration-500" style={{ width: `${Math.min((events.filter(e => new Date(e.date) > new Date()).length / 10) * 100, 100)}%` }} />
             </div>
           </div>
         </div>
@@ -69,11 +158,11 @@ export default function Events() {
           <div>
             <h3 className="text-[#5e5e5e] text-sm mb-1 font-medium font-body">Attendance Rate</h3>
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-extrabold text-[#1c1b1b] tracking-tighter font-headline">82%</span>
+              <span className="text-4xl font-extrabold text-[#1c1b1b] tracking-tighter font-headline">{memberStats.total > 0 ? '82%' : '0%'}</span>
               <span className="text-sm text-[#5e5e5e]">avg. weekly</span>
             </div>
             <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
-              <div className="h-full bg-orange-500" style={{ width: '82%' }} />
+              <div className="h-full bg-orange-500 transition-all duration-500" style={{ width: memberStats.total > 0 ? '82%' : '0%' }} />
             </div>
           </div>
         </div>
@@ -84,16 +173,16 @@ export default function Events() {
             <div className="p-3 rounded-xl bg-purple-100 text-purple-800">
               <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>person_add</span>
             </div>
-            <span className="animate-pulse flex h-2 w-2 rounded-full bg-[#9e2016]"></span>
+            {memberStats.visitors > 0 && <span className="animate-pulse flex h-2 w-2 rounded-full bg-[#9e2016]"></span>}
           </div>
           <div>
-            <h3 className="text-[#5e5e5e] text-sm mb-1 font-medium font-body">Pending Registrations</h3>
+            <h3 className="text-[#5e5e5e] text-sm mb-1 font-medium font-body">Visitor Registrations</h3>
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-extrabold text-[#9e2016] tracking-tighter font-headline">45</span>
+              <span className="text-4xl font-extrabold text-[#9e2016] tracking-tighter font-headline">{memberStats.visitors}</span>
               <span className="text-sm text-[#5e5e5e]">new entries</span>
             </div>
             <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
-              <div className="h-full bg-rose-500" style={{ width: '75%' }} />
+              <div className="h-full bg-rose-500 transition-all duration-500" style={{ width: `${Math.min((memberStats.visitors / 10) * 100, 100)}%` }} />
             </div>
           </div>
         </div>
@@ -110,59 +199,46 @@ export default function Events() {
             </button>
           </div>
           <div className="flex flex-col">
-            {/* Event Activity Item 1 */}
-            <div className="p-6 flex items-start gap-6 hover:bg-neutral-50 transition-colors border-b border-neutral-100/50">
-              <div className="w-12 h-12 rounded-full bg-[#ffdad5] flex items-center justify-center flex-shrink-0 text-[#9e2016]">
-                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>celebration</span>
-              </div>
-              <div className="flex-grow">
-                <div className="flex justify-between items-start mb-1">
-                  <p className="text-[#1c1b1b] font-medium font-body"><span className="font-bold">Annual Worship & Praise Night</span> scheduled for Oct 24.</p>
-                  <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full uppercase tracking-widest">Upcoming</span>
+            {loading ? (
+              <div className="p-12 text-center text-neutral-400">Loading events...</div>
+            ) : events.length > 0 ? (
+              events.map((event) => (
+                <div key={event.id} className="p-6 flex items-start gap-6 hover:bg-neutral-50 transition-colors border-b border-neutral-100/50">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden ${event.is_featured ? 'bg-[#ffdad5] text-[#9e2016]' : 'bg-blue-100 text-blue-700'}`}>
+                    {event.image_url ? (
+                      <img src={event.image_url} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
+                        {event.is_featured ? 'celebration' : 'event'}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex-grow">
+                    <div className="flex justify-between items-start mb-1">
+                      <p className="text-[#1c1b1b] font-medium font-body"><span className="font-bold">{event.title}</span> on {new Date(event.date).toLocaleDateString()}</p>
+                      <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-widest ${new Date(event.date) > new Date() ? 'text-green-600 bg-green-50' : 'text-[#5e5e5e] bg-neutral-100'}`}>
+                        {new Date(event.date) > new Date() ? 'Upcoming' : 'Past'}
+                      </span>
+                    </div>
+                    <p className="text-[#5e5e5e] text-sm mb-3">{event.location} • {event.time}. {event.description}</p>
+                    <div className="flex items-center gap-4">
+                      <span className="text-xs text-[#5e5e5e] bg-neutral-100 px-2 py-0.5 rounded">Category: {event.category}</span>
+                      <button 
+                        onClick={async () => {
+                          await supabase.from('events').delete().eq('id', event.id);
+                          fetchEvents();
+                        }}
+                        className="text-xs font-bold text-[#ba1a1a] flex items-center gap-1"
+                      >
+                        Delete Event
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-[#5e5e5e] text-sm mb-3">Main Sanctuary • 06:00 PM. Join us for an unforgettable evening of divine presence.</p>
-                <div className="flex items-center gap-4">
-                  <span className="text-xs text-[#5e5e5e] bg-neutral-100 px-2 py-0.5 rounded">Created 2 hours ago</span>
-                  <button className="text-xs font-bold text-[#9e2016] flex items-center gap-1">Manage Registry</button>
-                </div>
-              </div>
-            </div>
-
-            {/* Event Activity Item 2 */}
-            <div className="p-6 flex items-start gap-6 hover:bg-neutral-50 transition-colors border-b border-neutral-100/50">
-              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 text-blue-700">
-                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>groups</span>
-              </div>
-              <div className="flex-grow">
-                <div className="flex justify-between items-start mb-1">
-                  <p className="text-[#1c1b1b] font-medium font-body"><span className="font-bold">Youth Empowerment Summit</span> details updated.</p>
-                  <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-full uppercase tracking-widest">Confirmed</span>
-                </div>
-                <p className="text-[#5e5e5e] text-sm mb-3">Conference Hall B • Nov 02. Developing the next generation of spiritual leaders.</p>
-                <div className="flex items-center gap-4">
-                  <span className="text-xs text-[#5e5e5e] bg-neutral-100 px-2 py-0.5 rounded">Updated 1 hour ago</span>
-                  <button className="text-xs font-bold text-[#9e2016] flex items-center gap-1">Edit Details</button>
-                </div>
-              </div>
-            </div>
-
-            {/* Event Activity Item 3 */}
-            <div className="p-6 flex items-start gap-6 hover:bg-neutral-50 transition-colors">
-              <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 text-orange-700">
-                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>done_all</span>
-              </div>
-              <div className="flex-grow">
-                <div className="flex justify-between items-start mb-1">
-                  <p className="text-[#1c1b1b] font-medium font-body"><span className="font-bold">Community Outreach Picnic</span> successfully completed.</p>
-                  <span className="text-[10px] font-bold text-[#5e5e5e] bg-neutral-100 px-2 py-1 rounded-full uppercase tracking-widest">Past</span>
-                </div>
-                <p className="text-[#5e5e5e] text-sm mb-3">Community Park • Oct 05. A wonderful afternoon of fellowship and food.</p>
-                <div className="flex items-center gap-4">
-                  <span className="text-xs text-[#5e5e5e] bg-neutral-100 px-2 py-0.5 rounded">4 hours ago</span>
-                  <button className="text-xs font-bold text-[#9e2016] flex items-center gap-1">View Analytics</button>
-                </div>
-              </div>
-            </div>
+              ))
+            ) : (
+              <div className="p-12 text-center text-neutral-400">No events found.</div>
+            )}
           </div>
         </div>
 
@@ -207,7 +283,7 @@ export default function Events() {
       {/* Add Event Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl relative overflow-hidden">
+          <div className="bg-white rounded-3xl w-full max-w-3xl shadow-2xl relative overflow-hidden">
             <div className="p-8">
               <div className="flex justify-between items-center mb-8">
                 <h2 className="text-2xl font-bold text-[#1c1b1b] font-headline">Add Event</h2>
@@ -218,29 +294,91 @@ export default function Events() {
                   <span className="material-symbols-outlined">close</span>
                 </button>
               </div>
-              <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-                <div className="space-y-4">
-                  <div className="bg-neutral-50 rounded-2xl px-5 py-4 flex flex-col border border-transparent focus-within:border-[#9e2016]/20 transition-all">
-                    <label className="text-[10px] font-bold text-[#59413d] uppercase tracking-widest mb-1 font-body">Event Title</label>
-                    <input className="bg-transparent border-none p-0 focus:ring-0 text-[#1c1b1b] font-medium placeholder:text-[#59413d]/40" placeholder="Worship Night, Picnic, etc." required type="text" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-neutral-50 rounded-2xl px-5 py-4 flex flex-col border border-transparent focus-within:border-[#9e2016]/20 transition-all">
-                      <label className="text-[10px] font-bold text-[#59413d] uppercase tracking-widest mb-1 font-body">Date</label>
-                      <input className="bg-transparent border-none p-0 focus:ring-0 text-[#1c1b1b] font-medium" required type="date" />
+              <form className="space-y-6" onSubmit={handleSaveEvent}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Left Column */}
+                  <div className="space-y-4">
+                    <div className="bg-neutral-50 rounded-2xl px-5 py-4 flex flex-col border border-transparent transition-all">
+                      <label className="text-[10px] font-bold text-[#59413d] uppercase tracking-widest mb-1 font-body">Event Title</label>
+                      <input 
+                        className="bg-transparent border-none p-0 focus:ring-0 focus:outline-none text-[#1c1b1b] font-medium placeholder:text-[#59413d]/40" 
+                        placeholder="Worship Night, Picnic, etc." 
+                        required 
+                        type="text" 
+                        value={form.title}
+                        onChange={(e) => setForm({...form, title: e.target.value})}
+                      />
                     </div>
-                    <div className="bg-neutral-50 rounded-2xl px-5 py-4 flex flex-col border border-transparent focus-within:border-[#9e2016]/20 transition-all">
-                      <label className="text-[10px] font-bold text-[#59413d] uppercase tracking-widest mb-1 font-body">Time</label>
-                      <input className="bg-transparent border-none p-0 focus:ring-0 text-[#1c1b1b] font-medium" required type="time" />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-neutral-50 rounded-2xl px-5 py-4 flex flex-col border border-transparent transition-all">
+                        <label className="text-[10px] font-bold text-[#59413d] uppercase tracking-widest mb-1 font-body">Date</label>
+                        <input 
+                          className="bg-transparent border-none p-0 focus:ring-0 focus:outline-none text-[#1c1b1b] font-medium" 
+                          required 
+                          type="date" 
+                          value={form.date}
+                          onChange={(e) => setForm({...form, date: e.target.value})}
+                        />
+                      </div>
+                      <div className="bg-neutral-50 rounded-2xl px-5 py-4 flex flex-col border border-transparent transition-all">
+                        <label className="text-[10px] font-bold text-[#59413d] uppercase tracking-widest mb-1 font-body">Time</label>
+                        <input 
+                          className="bg-transparent border-none p-0 focus:ring-0 focus:outline-none text-[#1c1b1b] font-medium" 
+                          required 
+                          type="time" 
+                          value={form.time}
+                          onChange={(e) => setForm({...form, time: e.target.value})}
+                        />
+                      </div>
+                    </div>
+                    <div className="bg-neutral-50 rounded-2xl px-5 py-4 flex flex-col border border-transparent transition-all">
+                      <label className="text-[10px] font-bold text-[#59413d] uppercase tracking-widest mb-1 font-body">Location</label>
+                      <input 
+                        className="bg-transparent border-none p-0 focus:ring-0 focus:outline-none text-[#1c1b1b] font-medium placeholder:text-[#59413d]/40" 
+                        placeholder="e.g. Main Sanctuary" 
+                        required 
+                        type="text" 
+                        value={form.location}
+                        onChange={(e) => setForm({...form, location: e.target.value})}
+                      />
                     </div>
                   </div>
-                  <div className="bg-neutral-50 rounded-2xl px-5 py-4 flex flex-col border border-transparent focus-within:border-[#9e2016]/20 transition-all">
-                    <label className="text-[10px] font-bold text-[#59413d] uppercase tracking-widest mb-1 font-body">Location</label>
-                    <input className="bg-transparent border-none p-0 focus:ring-0 text-[#1c1b1b] font-medium placeholder:text-[#59413d]/40" placeholder="e.g. Main Sanctuary" required type="text" />
-                  </div>
-                  <div className="bg-neutral-50 rounded-2xl px-5 py-4 flex flex-col border border-transparent focus-within:border-[#9e2016]/20 transition-all">
-                    <label className="text-[10px] font-bold text-[#59413d] uppercase tracking-widest mb-1 font-body">Description</label>
-                    <textarea className="bg-transparent border-none p-0 focus:ring-0 text-[#1c1b1b] font-medium placeholder:text-[#59413d]/40 resize-none" placeholder="Tell us more about the event..." rows="3"></textarea>
+
+                  {/* Right Column */}
+                  <div className="space-y-4">
+                    <div className="bg-neutral-50 rounded-2xl px-5 py-4 flex flex-col border border-transparent transition-all">
+                      <label className="text-[10px] font-bold text-[#59413d] uppercase tracking-widest mb-1 font-body">Event Poster / Image</label>
+                      <div className="flex items-center gap-4 mt-1">
+                        {form.image_url && <img src={form.image_url} className="w-12 h-12 rounded-lg object-cover" />}
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          className="hidden" 
+                          id="event-image" 
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setUploading(true);
+                              const url = await uploadChurchAsset(file);
+                              if (url) setForm({...form, image_url: url});
+                              setUploading(false);
+                            }
+                          }}
+                        />
+                        <label htmlFor="event-image" className="cursor-pointer text-xs font-bold text-[#9e2016] border border-[#9e2016] px-4 py-2 rounded-xl hover:bg-[#9e2016] hover:text-white transition-all">
+                          {uploading ? 'Uploading...' : form.image_url ? 'Change Image' : 'Upload Image'}
+                        </label>
+                      </div>
+                    </div>
+                    <div className="bg-neutral-50 rounded-2xl px-5 py-4 flex flex-col border border-transparent transition-all">
+                      <label className="text-[10px] font-bold text-[#59413d] uppercase tracking-widest mb-1 font-body">Description</label>
+                      <textarea 
+                        className="bg-transparent border-none p-0 focus:ring-0 focus:outline-none text-[#1c1b1b] font-medium placeholder:text-[#59413d]/40 resize-none h-[84px]" 
+                        placeholder="Tell us more about the event..." 
+                        value={form.description}
+                        onChange={(e) => setForm({...form, description: e.target.value})}
+                      ></textarea>
+                    </div>
                   </div>
                 </div>
                 <button 

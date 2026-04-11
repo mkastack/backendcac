@@ -1,116 +1,92 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
+import { uploadChurchAsset } from '../../lib/storage';
 
 export default function Ministries() {
   const [activeTab, setActiveTab] = useState('all');
   const [registerOpen, setRegisterOpen] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [editingId, setEditingId] = useState(null);
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState({
     name: '',
     leader: '',
     description: '',
     icon: 'groups',
+    image_url: ''
   });
 
-  const [rows, setRows] = useState([
-    {
-      id: 1,
-      name: 'Youth Fellowship',
-      leader: 'Bro. Samuel Doe',
-      members: 124,
-      status: 'Active',
-      icon: 'groups',
-      color: 'bg-blue-100 text-blue-700',
-      description: 'Empowering the next generation of spiritual leaders through fellowship and service.',
-    },
-    {
-      id: 2,
-      name: 'Sunday School',
-      leader: 'Sis. Mary Johnson',
-      members: 85,
-      status: 'Active',
-      icon: 'school',
-      color: 'bg-orange-100 text-orange-700',
-      description: 'Foundational biblical teaching for children and young adults.',
-    },
-    {
-      id: 3,
-      name: 'Missions Outreach',
-      leader: 'Pastor David King',
-      members: 42,
-      status: 'Strategic',
-      icon: 'public',
-      color: 'bg-emerald-100 text-emerald-700',
-      description: 'Spreading the gospel and providing aid to local and international communities.',
-    },
-    {
-      id: 4,
-      name: 'Women of Grace',
-      leader: 'Deaconess Sarah Peters',
-      members: 156,
-      status: 'Active',
-      icon: 'female',
-      color: 'bg-purple-100 text-purple-700',
-      description: 'Supporting women in their spiritual journey and family life.',
-    },
-    {
-      id: 5,
-      name: 'Men of Valor',
-      leader: 'Elder James Bond',
-      members: 98,
-      status: 'Active',
-      icon: 'male',
-      color: 'bg-indigo-100 text-indigo-700',
-      description: 'Strengthening men in their roles as spiritual heads of households.',
-    },
-    {
-      id: 6,
-      name: 'Music & Worship',
-      leader: 'Sis. Grace Adeniyi',
-      members: 65,
-      status: 'Active',
-      icon: 'music_note',
-      color: 'bg-rose-100 text-rose-700',
-      description: 'Leading the congregation in divine praise and worship through music.',
-    },
-  ]);
+  useEffect(() => {
+    fetchMinistries();
 
-  const handleSave = (e) => {
+    const channel = supabase
+      .channel('admin_ministries_sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ministries' }, () => {
+        fetchMinistries();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const fetchMinistries = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('ministries')
+      .select('*')
+      .order('name', { ascending: true });
+    
+    if (!error && data) {
+      setRows(data.map(m => ({
+        ...m,
+        members: m.member_count || 0,
+        status: 'Active', // Default for now
+        color: 'bg-blue-100 text-blue-700', // Default for now
+      })));
+    } else if (error) {
+      console.error('Error fetching ministries:', error);
+    }
+    setLoading(false);
+  };
+
+  const handleSave = async (e) => {
     e.preventDefault();
     if (!form.name || !form.leader) return;
 
-    if (editingId) {
-      setRows((prev) =>
-        prev.map((row) =>
-          row.id === editingId
-            ? { ...row, ...form }
-            : row
-        )
-      );
-    } else {
-      const colors = [
-        'bg-blue-100 text-blue-700',
-        'bg-orange-100 text-orange-700',
-        'bg-emerald-100 text-emerald-700',
-        'bg-purple-100 text-purple-700',
-        'bg-indigo-100 text-indigo-700',
-        'bg-rose-100 text-rose-700',
-      ];
-      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    const ministryData = {
+      name: form.name,
+      leader: form.leader,
+      description: form.description,
+      icon: form.icon,
+      image_url: form.image_url,
+      member_count: editingId ? (rows.find(r => r.id === editingId)?.members || 0) : 0
+    };
 
-      setRows((prev) => [
-        {
-          id: Date.now(),
-          ...form,
-          members: 0,
-          status: 'Active',
-          color: randomColor,
-        },
-        ...prev,
-      ]);
+    let error;
+    if (editingId) {
+      const { error: updateError } = await supabase
+        .from('ministries')
+        .update(ministryData)
+        .eq('id', editingId);
+      error = updateError;
+    } else {
+      const { error: insertError } = await supabase
+        .from('ministries')
+        .insert([ministryData]);
+      error = insertError;
     }
 
-    closeModal();
+    if (!error) {
+      fetchMinistries();
+      closeModal();
+    } else {
+      console.error('Error saving ministry:', error);
+      alert('Failed to save ministry: ' + error.message);
+    }
   };
 
   const closeModal = () => {
@@ -121,6 +97,7 @@ export default function Ministries() {
       leader: '',
       description: '',
       icon: 'groups',
+      image_url: '',
     });
   };
 
@@ -131,13 +108,15 @@ export default function Ministries() {
       leader: m.leader,
       description: m.description,
       icon: m.icon,
+      image_url: m.image_url || '',
     });
     setRegisterOpen(true);
     setMenuOpenId(null);
   };
 
-  const handleDelete = (id) => {
-    setRows((prev) => prev.filter((row) => row.id !== id));
+  const handleDelete = async (id) => {
+    const { error } = await supabase.from('ministries').delete().eq('id', id);
+    if (!error) fetchMinistries();
     setMenuOpenId(null);
   };
 
@@ -173,21 +152,19 @@ export default function Ministries() {
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-neutral-100">
           <p className="text-[#5e5e5e] text-sm font-medium mb-1">Total Ministries</p>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-[#1c1b1b]">12</span>
-            <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded">+1 this qtr</span>
+            <span className="text-3xl font-bold text-[#1c1b1b]">{rows.length}</span>
           </div>
           <div className="mt-4 h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden">
-            <div className="h-full bg-blue-500" style={{ width: '80%' }}></div>
+            <div className="h-full bg-blue-500 transition-all duration-500" style={{ width: `${Math.min((rows.length / 20) * 100, 100)}%` }}></div>
           </div>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-neutral-100">
           <p className="text-[#5e5e5e] text-sm font-medium mb-1">Active Members</p>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-[#1c1b1b]">570</span>
-            <span className="text-[#5e5e5e] text-xs">Across all groups</span>
+            <span className="text-3xl font-bold text-[#1c1b1b]">{rows.reduce((acc, curr) => acc + (curr.members || 0), 0)}</span>
           </div>
           <div className="mt-4 h-1.5 w-full bg-neutral-100 rounded-full overflow-hidden">
-            <div className="h-full bg-emerald-500" style={{ width: '65%' }}></div>
+            <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${Math.min((rows.reduce((acc, curr) => acc + (curr.members || 0), 0) / 1000) * 100, 100)}%` }}></div>
           </div>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-neutral-100">
@@ -241,8 +218,11 @@ export default function Ministries() {
           {ministries.map((m) => (
             <div key={m.id} className="bg-white p-8 hover:bg-neutral-50 transition-colors group">
               <div className="flex justify-between items-start mb-6">
-                <div className={`p-4 rounded-2xl ${m.color.split(' ')[0]} ${m.color.split(' ')[1]}`}>
-                  <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>{m.icon}</span>
+                <div className={`p-4 rounded-2xl overflow-hidden relative ${m.color.split(' ')[0]} ${m.color.split(' ')[1]}`}>
+                  {m.image_url ? (
+                    <img src={m.image_url} className="absolute inset-0 w-full h-full object-cover opacity-60" />
+                  ) : null}
+                  <span className="relative z-10 material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>{m.icon}</span>
                 </div>
                 <div className="relative">
                   <button 
@@ -357,6 +337,38 @@ export default function Ministries() {
                           <span className="material-symbols-outlined text-lg">{icon}</span>
                         </button>
                       ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Image Upload */}
+                <div className="space-y-2 md:col-span-2">
+                  <label className="ml-1 text-sm font-bold uppercase tracking-wider text-[#5e5e5e]">Ministry Banner / Image</label>
+                  <div className="flex items-center gap-4">
+                    {form.image_url && <img src={form.image_url} className="w-16 h-16 rounded-xl object-cover" />}
+                    <div className="flex-1 relative">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        id="ministry-image-upload"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setUploading(true);
+                            const url = await uploadChurchAsset(file);
+                            if (url) setForm({ ...form, image_url: url });
+                            setUploading(false);
+                          }
+                        }}
+                      />
+                      <label 
+                        htmlFor="ministry-image-upload"
+                        className="flex items-center justify-center gap-2 w-full rounded-xl border-2 border-dashed border-[#8d706c]/30 py-4 px-4 text-sm font-bold text-[#5e5e5e] cursor-pointer hover:bg-neutral-50 transition-all"
+                      >
+                        <span className="material-symbols-outlined">{uploading ? 'sync' : 'add_photo_alternate'}</span>
+                        {uploading ? 'Uploading...' : form.image_url ? 'Change Image' : 'Upload Ministry Image'}
+                      </label>
                     </div>
                   </div>
                 </div>

@@ -62,32 +62,54 @@ export function EventsSection() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.1 }}
-                  className={`group bg-card border border-border rounded-2xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.05)] hover:!shadow-[0_12px_24px_rgba(0,0,0,0.1)] hover:!-translate-y-[3px] hover:scale-[1.005] transition-all duration-300 ${
-                    event.featured ? "border-l-4 border-l-red-300" : ""
-                  }`}
+                  className="group bg-card relative border border-border rounded-2xl overflow-hidden shadow-[0_3px_10px_rgba(0,0,0,0.06)] hover:!shadow-[0_12px_32px_rgba(0,0,0,0.08)] transition-all duration-300 w-full"
                 >
-                  {event.featured && (
-                    <span className="inline-block px-3 py-1 bg-church-gold/10 text-church-red rounded-full text-xs font-semibold mb-3">
-                      Featured Event
-                    </span>
-                  )}
-                  <h3 className="font-body font-semibold text-xl text-foreground mb-3 group-hover:text-church-red transition-colors">
-                    {event.title}
-                  </h3>
-                  <p className="text-muted-foreground mb-4">{event.description}</p>
-                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1.5 group-hover:text-red-400 transition-colors">
-                      <Calendar className="w-4 h-4 text-church-red transition-transform duration-300 group-hover:scale-105" />
-                      {event.date}
-                    </span>
-                    <span className="flex items-center gap-1.5 group-hover:text-red-400 transition-colors">
-                      <Clock className="w-4 h-4 text-church-red transition-transform duration-300 group-hover:scale-105" />
-                      {event.time}
-                    </span>
-                    <span className="flex items-center gap-1.5 group-hover:text-red-400 transition-colors">
-                      <MapPin className="w-4 h-4 text-church-red transition-transform duration-300 group-hover:scale-105" />
-                      {event.location}
-                    </span>
+                  {/* Left Accent Bar */}
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#ba1a1a]" />
+
+                  <div className="p-5 sm:p-6 flex flex-col md:flex-row gap-6">
+                    {/* Left Content */}
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <span className="px-4 py-1.5 bg-[#5b21b6]/10 text-[#5b21b6] rounded-full text-[10px] font-extrabold uppercase tracking-widest">
+                          Youth
+                        </span>
+                        {event.featured && (
+                          <span className="px-4 py-1.5 bg-[#ffdad5] text-[#ba1a1a] rounded-full text-[10px] font-extrabold uppercase tracking-widest">
+                            Featured
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="font-heading font-bold text-xl text-[#1c1b1b] mb-2 group-hover:text-[#ba1a1a] transition-colors">
+                        {event.title}
+                      </h3>
+                      <p className="text-[#5e5e5e] text-sm leading-relaxed mb-3">{event.description}</p>
+                    </div>
+
+                    {/* Right Details Panel */}
+                    <div className="md:w-[260px] flex flex-col justify-between gap-4 md:border-l md:border-border md:pl-6">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3 text-[#1c1b1b] text-sm">
+                          <Calendar className="w-4 h-4 text-[#ba1a1a]" />
+                          <span className="font-semibold">{event.date}</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-[#1c1b1b] text-sm">
+                          <Clock className="w-4 h-4 text-[#ba1a1a]" />
+                          <span className="font-semibold">{event.time}</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-[#1c1b1b] text-sm">
+                          <MapPin className="w-4 h-4 text-[#ba1a1a]" />
+                          <span className="font-semibold">{event.location}</span>
+                        </div>
+                      </div>
+
+                      <Button 
+                        size="sm"
+                        className="w-full bg-[#1e3a8a] text-white hover:bg-[#1e40af] rounded-lg font-bold shadow-md shadow-[#1e3a8a]/20"
+                      >
+                        Join Now
+                      </Button>
+                    </div>
                   </div>
                 </motion.div>
               ))}

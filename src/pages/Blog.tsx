@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 import { motion } from "framer-motion";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -12,68 +13,50 @@ import conventionImage from "@/assets/619910776_122202868574563087_1389364340991
 
 
 
-const blogPosts = [
-  {
-    id: 1,
-    title: "Walking in Divine Purpose: A New Year Message",
-    excerpt: "Discover how to align your daily life with God's ultimate plan for you in this inspiring year-round guide...",
-    author: "Pastor James Mensah",
-    date: "Jan 15, 2026",
-    category: "Inspiration",
-    image: "https://images.unsplash.com/photo-1438232992991-995b7058bbb3?auto=format&fit=crop&q=80&w=800",
-  },
-  {
-    id: 2,
-    title: "Highlights from the Solid Foundation 2026",
-    excerpt: "Relive the powerful moments of worship, deliverance, and transformation from our recent convention...",
-    author: "Elder Grace Owusu",
-    date: "Jan 12, 2026",
-    category: "Church News",
-    image: conventionImage,
-  },
-  {
-    id: 3,
-    title: "The Power of Persistent Prayer",
-    excerpt: "Common challenges in prayer and how to overcome them to see the manifest power of God in your life...",
-    author: "Deacon Samuel Asante",
-    date: "Jan 08, 2026",
-    category: "Testimony",
-    image: prayerImage,
-  },
-  {
-    id: 4,
-    title: "Building a Stronger Family Foundation",
-    excerpt: "Scriptural principles for raising godly children and maintaining a peaceful, Christ-centered home in the modern age...",
-    author: "Deaconess Martha Boateng",
-    date: "Jan 05, 2026",
-    category: "Family Life",
-    image: "https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&q=80&w=800",
-  },
-  {
-    id: 5,
-    title: "Youth Ministry: The Future is Now",
-    excerpt: "How our young people are leading the charge in digital missions and local community outreach projects...",
-    author: "Elder James Owusu",
-    date: "Jan 02, 2026",
-    category: "Youth Ministry",
-    image: youthImage,
-  },
-  {
-    id: 6,
-    title: "Understanding Financial Stewardship",
-    excerpt: "Practical tips on managing resources according to kingdom principles of sowing, reaping, and saving...",
-    author: "Pastor James Mensah",
-    date: "Dec 28, 2025",
-    category: "Financial Wisdom",
-    image: "https://images.unsplash.com/photo-1454165205744-3b78555e5572?auto=format&fit=crop&q=80&w=800",
-  },
-];
+// Seed data removed, now fetching from Supabase
 
 const categories = ["All", "Inspiration", "Church News", "Testimony", "Family Life", "Youth Ministry"];
 
 export default function BlogPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [blogPosts, setBlogPosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchPosts() {
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select('*')
+        .eq('status', 'Published')
+        .order('published_at', { ascending: false });
+      
+      if (!error && data) {
+        setBlogPosts(data.map(p => ({
+          ...p,
+          excerpt: (p.content || '').substring(0, 150) + '...',
+          image: p.image_url || heroImage,
+          category: "Church Update",
+          author: p.author || "Church Admin",
+          date: p.published_at ? new Date(p.published_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : 'Recently'
+        })));
+      }
+      setLoading(false);
+    }
+    fetchPosts();
+
+    // Add Realtime sync
+    const channel = supabase
+      .channel('public_blog_sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'blog_posts' }, () => {
+        fetchPosts();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const filteredPosts = blogPosts.filter((post) => {
     const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -152,7 +135,9 @@ export default function BlogPage() {
         <section className="py-16 bg-church-cream">
           <div className="container mx-auto px-6">
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredPosts.map((post, index) => (
+              {loading ? (
+                <div className="col-span-full text-center py-20 text-muted-foreground animate-pulse">Loading announcements...</div>
+              ) : filteredPosts.map((post, index) => (
                 <motion.article
                   key={post.id}
                   initial={{ opacity: 0, y: 20 }}

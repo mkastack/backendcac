@@ -1,76 +1,89 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
 
 export default function Prayer() {
   const [requestOpen, setRequestOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [notice, setNotice] = useState('');
   const [form, setForm] = useState({
     title: '',
     submitter: '',
     content: '',
   });
 
-  const [rows, setRows] = useState([
-    {
-      id: 1,
-      title: 'Surgery for Mother',
-      content: "Please pray for my mother's surgery scheduled for next Tuesday. She's been struggling with her hip for years...",
-      submitter: 'Samuel Johnson',
-      avatar: 'SJ',
-      date: 'Oct 24, 2023',
-      status: 'Pending',
-    },
-    {
-      id: 2,
-      title: 'Business Guidance',
-      content: 'Seeking guidance for a new business venture. Praying for wisdom to make decisions that align...',
-      submitter: 'Esther Moore',
-      avatar: 'EM',
-      date: 'Oct 22, 2023',
-      status: 'Prayed For',
-    },
-    {
-      id: 3,
-      title: 'Graduation Thanksgiving',
-      content: 'Gratitude and Thanksgiving! Our daughter just graduated from University. We want the church...',
-      submitter: 'Williams Adebayo',
-      avatar: 'WA',
-      date: 'Oct 21, 2023',
-      status: 'Pending',
-    },
-  ]);
+  const [rows, setRows] = useState([]);
 
-  const handleSave = (e) => {
-    e.preventDefault();
-    if (!form.title || !form.submitter) return;
+  useEffect(() => {
+    fetchRequests();
+    
+    // Subscribe to real-time changes
+    const channel = supabase
+      .channel('prayer_requests_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'prayer_requests' }, () => {
+        fetchRequests();
+      })
+      .subscribe();
 
-    if (editingId) {
-      setRows((prev) =>
-        prev.map((row) =>
-          row.id === editingId
-            ? { ...row, title: form.title, submitter: form.submitter, content: form.content }
-            : row
-        )
-      );
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const fetchRequests = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('prayer_requests')
+      .select('*')
+      .order('date', { ascending: false });
+    
+    if (error) {
+      setNotice('Error fetching requests: ' + error.message);
     } else {
-      const initials = form.submitter
-        .split(' ')
-        .slice(0, 2)
-        .map((n) => n[0]?.toUpperCase() || '')
-        .join('');
+      setRows(data.map(r => ({
+        ...r,
+        title: r.name + "'s Request", // Map database fields to component
+        submitter: r.name,
+        content: r.request,
+        avatar: r.name.split(' ').slice(0, 2).map((n) => n[0]?.toUpperCase() || '').join(''),
+        date: new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+      })));
+    }
+    setLoading(false);
+  };
 
-      setRows((prev) => [
-        {
-          id: Date.now(),
-          ...form,
-          avatar: initials,
-          date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-          status: 'Pending',
-        },
-        ...prev,
-      ]);
+  const handleSave = async (e) => {
+    e.preventDefault();
+    if (!form.submitter || !form.content) return;
+
+    const requestData = {
+      name: form.submitter,
+      request: form.content,
+      status: 'Pending',
+      date: new Date().toISOString().split('T')[0]
+    };
+
+    let error;
+    if (editingId) {
+      const { error: updateError } = await supabase
+        .from('prayer_requests')
+        .update(requestData)
+        .eq('id', editingId);
+      error = updateError;
+    } else {
+      const { error: insertError } = await supabase
+        .from('prayer_requests')
+        .insert([requestData]);
+      error = insertError;
     }
 
-    closeModal();
+    if (error) {
+      setNotice('Error saving request: ' + error.message);
+    } else {
+      setNotice(editingId ? 'Request updated successfully.' : 'New request submitted.');
+      fetchRequests();
+      closeModal();
+    }
   };
 
   const closeModal = () => {
@@ -85,14 +98,18 @@ export default function Prayer() {
     setRequestOpen(true);
   };
 
-  const toggleStatus = (id) => {
-    setRows((prev) =>
-      prev.map((row) =>
-        row.id === id
-          ? { ...row, status: row.status === 'Pending' ? 'Prayed For' : 'Pending' }
-          : row
-      )
-    );
+  const toggleStatus = async (id, currentStatus) => {
+    const newStatus = currentStatus === 'Pending' ? 'Prayed For' : 'Pending';
+    const { error } = await supabase
+      .from('prayer_requests')
+      .update({ status: newStatus })
+      .eq('id', id);
+    
+    if (error) {
+      setNotice('Error updating status: ' + error.message);
+    } else {
+      fetchRequests();
+    }
   };
 
   const stats = {
@@ -223,7 +240,7 @@ export default function Prayer() {
                         <button
                           className="rounded-xl p-2 text-[#59413d] transition-all hover:bg-[#ffdad5] hover:text-[#9e2016]"
                           title={row.status === 'Pending' ? 'Mark as Prayed For' : 'Undo Mark'}
-                          onClick={() => toggleStatus(row.id)}
+                          onClick={() => toggleStatus(row.id, row.status)}
                         >
                           <span className="material-symbols-outlined">{row.status === 'Pending' ? 'church' : 'undo'}</span>
                         </button>
@@ -237,7 +254,11 @@ export default function Prayer() {
                         <button
                           className="rounded-xl p-2 text-[#59413d] transition-all hover:bg-[#ffdad6] hover:text-[#ba1a1a]"
                           title="Delete"
-                          onClick={() => setRows((prev) => prev.filter((r) => r.id !== row.id))}
+                          onClick={async () => {
+                            const { error } = await supabase.from('prayer_requests').delete().eq('id', row.id);
+                            if (error) setNotice('Error deleting: ' + error.message);
+                            else fetchRequests();
+                          }}
                         >
                           <span className="material-symbols-outlined">delete</span>
                         </button>

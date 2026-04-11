@@ -1,4 +1,67 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
+
 export default function Dashboard() {
+  const [stats, setStats] = useState({
+    members: 0,
+    donations: 0,
+    events: 0,
+    prayers: 0,
+    sermons: 0,
+    blog: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchStats();
+
+    // Set up Realtime subscriptions for all relevant tables
+    const tables = ['members', 'donations', 'events', 'prayer_requests', 'sermons', 'blog_posts'];
+    const channel = supabase.channel('dashboard_stats_sync');
+    
+    tables.forEach(table => {
+      channel.on('postgres_changes', { event: '*', schema: 'public', table }, () => {
+        fetchStats();
+      });
+    });
+
+    channel.subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  async function fetchStats() {
+    // 1. Members count
+    const { count: membersCount } = await supabase.from('members').select('*', { count: 'exact', head: true });
+    
+    // 2. Donations total
+    const { data: donationsData } = await supabase.from('donations').select('amount');
+    const donationsTotal = donationsData?.reduce((acc, curr) => acc + (curr.amount || 0), 0) || 0;
+
+    // 3. Upcoming Events
+    const { count: eventsCount } = await supabase.from('events').select('*', { count: 'exact', head: true });
+
+    // 4. Pending prayers
+    const { count: prayersCount } = await supabase.from('prayer_requests').select('*', { count: 'exact', head: true });
+
+    // 5. Sermons
+    const { count: sermonsCount } = await supabase.from('sermons').select('*', { count: 'exact', head: true });
+
+    // 6. Blog
+    const { count: blogCount } = await supabase.from('blog_posts').select('*', { count: 'exact', head: true });
+
+    setStats({
+      members: membersCount || 0,
+      donations: donationsTotal,
+      events: eventsCount || 0,
+      prayers: prayersCount || 0,
+      sermons: sermonsCount || 0,
+      blog: blogCount || 0
+    });
+    setLoading(false);
+  }
   return (
     <>
       <main className="mx-auto max-w-screen-2xl px-8 pb-12 pt-8">
@@ -27,10 +90,10 @@ export default function Dashboard() {
             <div>
               <h3 className="mb-1 text-sm font-medium text-[#5e5e5e]">Total Members</h3>
               <div className="flex items-end justify-between">
-                <span className="text-4xl font-extrabold tracking-tighter text-[#1c1b1b]">12,482</span>
+                <span className="text-4xl font-extrabold tracking-tighter text-[#1c1b1b]">{stats.members.toLocaleString()}</span>
               </div>
               <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
-                <div className="h-full bg-green-500" style={{ width: '70%' }} />
+                <div className="h-full bg-green-500 transition-all duration-500" style={{ width: `${Math.min((stats.members / 1000) * 100, 100)}%` }} />
               </div>
             </div>
           </div>
@@ -45,10 +108,10 @@ export default function Dashboard() {
             <div>
               <h3 className="mb-1 text-sm font-medium text-[#5e5e5e]">Total Donations</h3>
               <div className="flex items-end justify-between">
-                <span className="text-4xl font-extrabold tracking-tighter text-[#1c1b1b]">$42,910</span>
+                <span className="text-4xl font-extrabold tracking-tighter text-[#1c1b1b]">${stats.donations.toLocaleString()}</span>
               </div>
               <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
-                <div className="h-full bg-orange-500" style={{ width: '65%' }} />
+                <div className="h-full bg-orange-500 transition-all duration-500" style={{ width: `${Math.min((stats.donations / 10000) * 100, 100)}%` }} />
               </div>
             </div>
           </div>
@@ -66,11 +129,11 @@ export default function Dashboard() {
             <div>
               <h3 className="mb-1 text-sm font-medium text-[#5e5e5e]">Upcoming Events</h3>
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-extrabold tracking-tighter text-[#1c1b1b]">08</span>
-                <span className="text-sm text-[#5e5e5e]">next 14 days</span>
+                <span className="text-4xl font-extrabold tracking-tighter text-[#1c1b1b]">{stats.events.toString().padStart(2, '0')}</span>
+                <span className="text-sm text-[#5e5e5e]">active events</span>
               </div>
               <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
-                <div className="h-full bg-blue-500" style={{ width: '40%' }} />
+                <div className="h-full bg-blue-500 transition-all duration-500" style={{ width: `${Math.min((stats.events / 20) * 100, 100)}%` }} />
               </div>
             </div>
           </div>
@@ -85,11 +148,11 @@ export default function Dashboard() {
             <div>
               <h3 className="mb-1 text-sm font-medium text-[#5e5e5e]">Pending Prayer Requests</h3>
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-extrabold tracking-tighter text-[#9e2016]">24</span>
+                <span className="text-4xl font-extrabold tracking-tighter text-[#9e2016]">{stats.prayers}</span>
                 <span className="text-sm text-[#5e5e5e]">urgent focus</span>
               </div>
               <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
-                <div className="h-full bg-[#9e2016]" style={{ width: '85%' }} />
+                <div className="h-full bg-[#9e2016] transition-all duration-500" style={{ width: `${Math.min((stats.prayers / 50) * 100, 100)}%` }} />
               </div>
             </div>
           </div>
@@ -103,11 +166,11 @@ export default function Dashboard() {
             <div>
               <h3 className="mb-1 text-sm font-medium text-[#5e5e5e]">Published Sermons</h3>
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-extrabold tracking-tighter text-[#1c1b1b]">156</span>
+                <span className="text-4xl font-extrabold tracking-tighter text-[#1c1b1b]">{stats.sermons}</span>
                 <span className="text-sm text-[#5e5e5e]">media library</span>
               </div>
               <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
-                <div className="h-full bg-indigo-500" style={{ width: '55%' }} />
+                <div className="h-full bg-indigo-500 transition-all duration-500" style={{ width: `${Math.min((stats.sermons / 100) * 100, 100)}%` }} />
               </div>
             </div>
           </div>
@@ -121,11 +184,11 @@ export default function Dashboard() {
             <div>
               <h3 className="mb-1 text-sm font-medium text-[#5e5e5e]">Blog Posts</h3>
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-extrabold tracking-tighter text-[#1c1b1b]">42</span>
-                <span className="text-sm text-[#5e5e5e]">active articles</span>
+                <span className="text-4xl font-extrabold tracking-tighter text-[#1c1b1b]">{stats.blog}</span>
+                <span className="text-sm text-[#5e5e5e]">published</span>
               </div>
               <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
-                <div className="h-full bg-pink-500" style={{ width: '30%' }} />
+                <div className="h-full bg-pink-500 transition-all duration-500" style={{ width: `${Math.min((stats.blog / 50) * 100, 100)}%` }} />
               </div>
             </div>
           </div>

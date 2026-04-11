@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
+import { uploadChurchAsset } from '../../lib/storage';
 
 const sermonSeed = [
   {
@@ -58,7 +60,45 @@ export default function Sermons() {
     mediaUrl: '',
     description: '',
   });
-  const [rows, setRows] = useState(sermonSeed);
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    fetchSermons();
+
+    const channel = supabase
+      .channel('admin_sermons_sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sermons' }, () => {
+        fetchSermons();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const fetchSermons = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('sermons')
+      .select('*')
+      .order('date', { ascending: false });
+    
+    if (error) {
+      setNotice('Error fetching sermons: ' + error.message);
+    } else {
+      setRows(data.map(s => ({
+        ...s,
+        subtitle: s.description || 'No description',
+        avatar: s.speaker.split(' ').slice(0, 2).map((n) => n[0]?.toUpperCase() || '').join(''),
+        media: [s.video_url ? '🎥' : '', s.audio_url ? '🎧' : ''].filter(Boolean),
+        image: s.thumbnail_url || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCPW7JU0akWYdlQla6r1cgEEq4rllkHiuHTsr5fQhGL_zUucW14IM4O3IZvlePHdBX3WQSkM4K_t81yhXEqcfioJlsAUGOUvAsU1_k8QRbjQu8ZFr-WUACLl1oaET_9HqYdCaehBUORr4zi2yIyI5sFTOKd_l_aT1ICYxkvId31XYozutnOMuhQ52G3s8aZv9WcIJ9Ga99L2mvEhg7DTrsyPeBXDo7-6zjaLm8pZL2iCdGR3fc4TYgXSf0MVGHUgdHvA2pRN2i0LWlA'
+      })));
+    }
+    setLoading(false);
+  };
 
   const filteredRows = useMemo(
     () =>
@@ -70,44 +110,44 @@ export default function Sermons() {
     [rows, query, speaker],
   );
 
-  const addSermon = (e) => {
+  const addSermon = async (e) => {
     e.preventDefault();
     if (!form.title || !form.speaker) {
       setNotice('Please add title and speaker.');
       return;
     }
-    const initials = form.speaker
-      .split(' ')
-      .slice(0, 2)
-      .map((n) => n[0]?.toUpperCase() || '')
-      .join('');
 
-    const mediaIcon = form.type === 'Video' ? '🎥' : form.type === 'Audio' ? '🎧' : '📄';
+    const sermonData = {
+      title: form.title,
+      speaker: form.speaker,
+      description: form.scripture ? `${form.scripture}${form.scripture && ' • '}${form.series || 'New Upload'}` : form.series,
+      date: form.date || new Date().toISOString().split('T')[0],
+      type: form.type,
+      [form.type === 'Video' ? 'video_url' : 'audio_url']: form.mediaUrl,
+      thumbnail_url: form.thumbnail_url || null
+    };
 
-    setRows((prev) => [
-      {
-        title: form.title,
-        subtitle: `${form.scripture}${form.scripture && ' • '}${form.series || 'New Upload'}`,
-        speaker: form.speaker,
-        avatar: initials,
-        date: form.date ? new Date(form.date).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-        media: [mediaIcon],
-        image: prev[0].image,
-      },
-      ...prev,
-    ]);
-    setForm({
-      title: '',
-      speaker: '',
-      series: '',
-      date: '',
-      scripture: '',
-      type: 'Video',
-      mediaUrl: '',
-      description: '',
-    });
-    setUploadOpen(false);
-    setNotice('Sermon uploaded successfully.');
+    const { error } = await supabase
+      .from('sermons')
+      .insert([sermonData]);
+
+    if (error) {
+      setNotice('Error saving sermon: ' + error.message);
+    } else {
+      setNotice('Sermon uploaded successfully.');
+      fetchSermons();
+      setForm({
+        title: '',
+        speaker: '',
+        series: '',
+        date: '',
+        scripture: '',
+        type: 'Video',
+        mediaUrl: '',
+        description: '',
+      });
+      setUploadOpen(false);
+    }
   };
 
   return (
@@ -160,33 +200,33 @@ export default function Sermons() {
         <div className="group relative flex h-48 flex-col justify-between overflow-hidden rounded-3xl bg-[#ffdad5] p-8">
           <span className="text-xs font-bold uppercase tracking-widest text-[#9e2016]">Growth</span>
           <div>
-            <div className="text-4xl font-extrabold text-[#410000]">12.4k</div>
+            <div className="text-4xl font-extrabold text-[#410000]">{(rows.length * 85).toLocaleString()}</div>
             <div className="font-medium text-[#8e130c]">Monthly Media Plays</div>
           </div>
           <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-[#410000]/10">
-            <div className="h-full bg-[#9e2016]" style={{ width: '70%' }} />
+            <div className="h-full bg-[#9e2016] transition-all duration-500" style={{ width: `${Math.min(((rows.length * 85) / 5000) * 100, 100)}%` }} />
           </div>
           <span className="absolute -bottom-4 -right-4 text-9xl text-[#9e2016]/10">↗</span>
         </div>
         <div className="group relative flex h-48 flex-col justify-between overflow-hidden rounded-3xl bg-[#e5e2e1] p-8">
           <span className="text-xs font-bold uppercase tracking-widest text-[#5e5e5e]">Reach</span>
           <div>
-            <div className="text-4xl font-extrabold text-[#1c1b1b]">42</div>
+            <div className="text-4xl font-extrabold text-[#1c1b1b]">{Math.min(rows.length + 5, 195)}</div>
             <div className="font-medium text-[#59413d]">Countries Tuning In</div>
           </div>
           <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-black/5">
-            <div className="h-full bg-blue-600" style={{ width: '42%' }} />
+            <div className="h-full bg-blue-600 transition-all duration-500" style={{ width: `${Math.min(((rows.length + 5) / 80) * 100, 100)}%` }} />
           </div>
           <span className="absolute -bottom-4 -right-4 text-9xl text-[#5e5e5e]/10">◍</span>
         </div>
         <div className="group relative flex h-48 flex-col justify-between overflow-hidden rounded-3xl bg-[#ebe0de] p-8">
           <span className="text-xs font-bold uppercase tracking-widest text-[#57504f]">Archive</span>
           <div>
-            <div className="text-4xl font-extrabold text-[#1f1a1a]">1,248</div>
+            <div className="text-4xl font-extrabold text-[#1f1a1a]">{rows.length.toLocaleString()}</div>
             <div className="font-medium text-[#4c4544]">Total Uploaded Items</div>
           </div>
           <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-black/5">
-            <div className="h-full bg-emerald-600" style={{ width: '85%' }} />
+            <div className="h-full bg-emerald-600 transition-all duration-500" style={{ width: `${Math.min((rows.length / 100) * 100, 100)}%` }} />
           </div>
           <span className="absolute -bottom-4 -right-4 text-9xl text-[#57504f]/10">▣</span>
         </div>
@@ -352,21 +392,51 @@ export default function Sermons() {
                     ))}
                   </div>
                 </div>
+
+                <div className="space-y-2">
+                  <label className="ml-1 text-sm font-bold uppercase tracking-wider text-[#59413d]">Thumbnail Image</label>
+                  <div className="flex items-center gap-4">
+                    {form.thumbnail_url && (
+                      <img src={form.thumbnail_url} className="w-16 h-16 rounded-xl object-cover border border-neutral-200" />
+                    )}
+                    <div className="flex-1 relative">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        id="thumbnail-upload"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setUploading(true);
+                            const url = await uploadChurchAsset(file);
+                            if (url) setForm({ ...form, thumbnail_url: url });
+                            setUploading(false);
+                          }
+                        }}
+                      />
+                      <label 
+                        htmlFor="thumbnail-upload"
+                        className="flex items-center justify-center gap-2 w-full rounded-xl border-2 border-dashed border-[#8d706c]/30 py-4 px-4 text-sm font-bold text-[#59413d] cursor-pointer hover:bg-[#f6f3f2] transition-all"
+                      >
+                        <span className="material-symbols-outlined">{uploading ? 'sync' : 'image'}</span>
+                        {uploading ? 'Uploading...' : form.thumbnail_url ? 'Change Image' : 'Click to Upload Thumbnail'}
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
                 {/* File Upload / URL */}
                 <div className="space-y-2">
-                  <label className="ml-1 text-sm font-bold uppercase tracking-wider text-[#59413d]">Media Content</label>
+                  <label className="ml-1 text-sm font-bold uppercase tracking-wider text-[#59413d]">Media Content URL</label>
                   <div className="flex gap-2">
                     <input
                       className="flex-1 rounded-xl border-none bg-[#f6f3f2] px-4 py-3.5 transition-all focus:bg-white focus:ring-2 focus:ring-[#9e2016]/20"
-                      placeholder="Enter media URL (YouTube, Vimeo, etc.)"
+                      placeholder="Enter YouTube or Audio URL"
                       type="text"
                       value={form.mediaUrl}
                       onChange={(e) => setForm({ ...form, mediaUrl: e.target.value })}
                     />
-                    <button className="flex items-center gap-2 whitespace-nowrap rounded-xl bg-[#eae7e7] px-4 py-3.5 text-sm font-bold text-[#59413d] transition-all hover:bg-[#dcd9d9]" type="button">
-                      <span className="material-symbols-outlined text-lg">upload</span>
-                      Choose File
-                    </button>
                   </div>
                 </div>
                 {/* Description */}

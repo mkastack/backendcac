@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import heroImage from "@/assets/514032381_122169086210563087_2234518162042499617_n.jpg";
 import heroImage2 from "@/assets/10.jpeg";
+import { supabase } from "@/lib/supabase";
 
 const testimonies = [
   {
@@ -47,13 +48,33 @@ export default function PrayerPage() {
   const [testimonySubmitted, setTestimonySubmitted] = useState(false);
   const { toast } = useToast();
 
-  const handlePrayerSubmit = (e: React.FormEvent) => {
+  const handlePrayerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setPrayerSubmitted(true);
-    toast({
-      title: "Prayer Request Submitted",
-      description: "Our prayer team will lift your request to God.",
-    });
+    
+    const { error } = await supabase
+      .from('prayer_requests')
+      .insert([
+        {
+          name: prayerForm.isAnonymous ? "Anonymous" : prayerForm.name,
+          request: prayerForm.request,
+          status: 'Pending',
+          date: new Date().toISOString().split('T')[0]
+        }
+      ]);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Could not submit request: " + error.message,
+        variant: "destructive"
+      });
+    } else {
+      setPrayerSubmitted(true);
+      toast({
+        title: "Prayer Request Submitted",
+        description: "Our prayer team will lift your request to God.",
+      });
+    }
   };
 
   const handleTestimonySubmit = (e: React.FormEvent) => {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
@@ -7,71 +7,44 @@ import { BookOpen, Clock, User, Download, Search, Filter, Mic, Play } from "luci
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-church.jpg";
+import { supabase } from "@/lib/supabase";
 
-const textSermons = [
-  {
-    id: 1,
-    title: "The Armor of God: Standing Firm in Faith",
-    preacher: "Pastor James Mensah",
-    date: "Jan 2, 2026",
-    readTime: "12 min read",
-    topic: "Spiritual Warfare",
-    excerpt: "In Ephesians 6, Paul describes the spiritual armor we need to stand against the enemy...",
-  },
-  {
-    id: 2,
-    title: "Grace Upon Grace: Understanding God's Favor",
-    preacher: "Elder Grace Owusu",
-    date: "Dec 30, 2025",
-    readTime: "10 min read",
-    topic: "Grace",
-    excerpt: "From His fullness we have all received, grace upon grace. What does this mean for us...",
-  },
-  {
-    id: 3,
-    title: "The Fruit of the Spirit: A Life Transformed",
-    preacher: "Pastor James Mensah",
-    date: "Dec 27, 2025",
-    readTime: "15 min read",
-    topic: "Holy Spirit",
-    excerpt: "But the fruit of the Spirit is love, joy, peace, patience, kindness, goodness...",
-  },
-  {
-    id: 4,
-    title: "Finding Rest in Christ",
-    preacher: "Elder Grace Owusu",
-    date: "Dec 23, 2025",
-    readTime: "8 min read",
-    topic: "Rest",
-    excerpt: "Come to me, all who labor and are heavy laden, and I will give you rest...",
-  },
-  {
-    id: 5,
-    title: "The Power of Forgiveness",
-    preacher: "Pastor James Mensah",
-    date: "Dec 20, 2025",
-    readTime: "11 min read",
-    topic: "Forgiveness",
-    excerpt: "Forgiveness is not just an option for the believer—it is a command and a pathway to freedom...",
-  },
-  {
-    id: 6,
-    title: "Walking in Wisdom",
-    preacher: "Elder Grace Owusu",
-    date: "Dec 17, 2025",
-    readTime: "9 min read",
-    topic: "Wisdom",
-    excerpt: "If any of you lacks wisdom, let him ask of God, who gives generously to all...",
-  },
-];
+// Seed data removed, now fetching from Supabase
 
 const topics = ["All Topics", "Spiritual Warfare", "Grace", "Holy Spirit", "Rest", "Forgiveness", "Wisdom"];
 
 export default function AudioSermonsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTopic, setSelectedTopic] = useState("All Topics");
+  const [sermons, setSermons] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredSermons = textSermons.filter((sermon) => {
+  useEffect(() => {
+    async function fetchSermons() {
+      const { data, error } = await supabase
+        .from('sermons')
+        .select('*')
+        .not('audio_url', 'is', null)
+        .order('date', { ascending: false });
+      
+      if (!error && data) {
+        setSermons(data.map(s => ({
+          id: s.id,
+          title: s.title,
+          preacher: s.speaker,
+          date: new Date(s.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          readTime: "Audio",
+          topic: s.type || "General",
+          excerpt: s.description || "Tune in to hear this inspiring message.",
+          audioUrl: s.audio_url
+        })));
+      }
+      setLoading(false);
+    }
+    fetchSermons();
+  }, []);
+
+  const filteredSermons = sermons.filter((sermon) => {
     const matchesSearch = sermon.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       sermon.preacher.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesTopic = selectedTopic === "All Topics" || sermon.topic === selectedTopic;
@@ -148,7 +121,11 @@ export default function AudioSermonsPage() {
         {/* Sermons List */}
         <section className="py-16 bg-church-cream">
           <div className="container mx-auto px-6">
-            {filteredSermons.length > 0 ? (
+            {loading ? (
+              <div className="text-center py-20">
+                <p className="text-muted-foreground text-lg">Loading audio sermons...</p>
+              </div>
+            ) : filteredSermons.length > 0 ? (
               <div className="space-y-6 max-w-4xl mx-auto">
                 {filteredSermons.map((sermon, index) => (
                   <motion.article

@@ -1,74 +1,83 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
+import { uploadChurchAsset } from '../../lib/storage';
 
 export default function Blog() {
   const [postOpen, setPostOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [rows, setRows] = useState([]);
   const [form, setForm] = useState({
     title: '',
     author: '',
-    excerpt: '',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCRekhJOV60boGR62RSEEl5u1opK6DPxroifkEtnyPefe395jZqzk4KqPCgMv-_uvrAL2iBckL4y2qAPPNuiZl6qcC0PJTqibmtg1KkMq8bgntYJ7u-z2pD5BmoqwnRD0gTdn-Fv8Eh_Zhen4uI9kW9rhle4_B5LTXi1Zd22ZSMDnBTAWktUxlvYuXCWLpdsqNSFuT-lwqDO0pQUEpOzN0DDFLeQ2d-KXLUFPnPyyAATfwwF72eZ2LgqwQrkt9xZhFB40toVHhexmDG',
+    content: '',
+    image: '',
   });
 
-  const [rows, setRows] = useState([
-    {
-      title: 'The Power of Collective Prayer in Troubled Times',
-      excerpt: 'Reflecting on our recent communal vigil and its impact on the youth ministry.',
-      author: 'Pastor John Oladele',
-      initials: 'JO',
-      date: 'Oct 24, 2023',
-      status: 'Published',
-      image:
-        'https://lh3.googleusercontent.com/aida-public/AB6AXuCRekhJOV60boGR62RSEEl5u1opK6DPxroifkEtnyPefe395jZqzk4KqPCgMv-_uvrAL2iBckL4y2qAPPNuiZl6qcC0PJTqibmtg1KkMq8bgntYJ7u-z2pD5BmoqwnRD0gTdn-Fv8Eh_Zhen4uI9kW9rhle4_B5LTXi1Zd22ZSMDnBTAWktUxlvYuXCWLpdsqNSFuT-lwqDO0pQUEpOzN0DDFLeQ2d-KXLUFPnPyyAATfwwF72eZ2LgqwQrkt9xZhFB40toVHhexmDG',
-    },
-    {
-      title: 'Annual Harvest Festival: Dates and Volunteer Signup',
-      excerpt: 'Join us for the most anticipated celebration of the season.',
-      author: 'Mary Adebayo',
-      initials: 'MA',
-      date: 'Nov 02, 2023',
-      status: 'Draft',
-      image:
-        'https://lh3.googleusercontent.com/aida-public/AB6AXuDCHvv7RMh_88A9tJ2HV-wK3FBmP6xYLJLMzOl3QJNyEskAuOywjEzo9JvC2MCDTZJtfNUh1SedFv6cKIpqvOuoWTx15hEwJsdtepQViRAoC7iKh04KVYVqRMJLlFaQVYJ8h2_GPZ_Ywa2xn7pGHenYSUQbSFisKtAJL2S9cdwB7F4-hNbsC0k5k6JEgI_SvED2rcCi8L4-KqWA1L--3KtVOPCD6ws-UT_uvSpcxWDQkTA4X6doFsYIooFldibwSTBbQb6VdToscP87',
-    },
-    {
-      title: 'Renovation Update: The Sanctuary Project',
-      excerpt: 'Progress reports on our physical sanctuary upgrades and dedication ceremony.',
-      author: 'Pastor John Oladele',
-      initials: 'JO',
-      date: 'Oct 15, 2023',
-      status: 'Published',
-      image:
-        'https://lh3.googleusercontent.com/aida-public/AB6AXuB0OH_WJLK3NTHqYwmHTdTT0Yrz-cPrEQ0ByxD1bOEMDl8D7EjGIALkV3oUx9N5lR4gpaHe7L-TkvTrEcqNxBcz1Ym79MDTAsONdNl9FW1i5YmKeZeeuoidf5CMGqKbBsfVvdgfKMaw7OrH5SxdIVNQ1GizLfGrQC8KKdX1ap9GytNFjs3nWkqTzuSNNFEnDTYEpM-bKRApQuuYCPVBLYL7HpLFhDnrFTfgH_-CRbHLxzUlEruZK3Jjp5O0kCJlDScc4ceX_nj1Ay9n',
-    },
-  ]);
+  useEffect(() => {
+    fetchPosts();
 
-  const handleCreatePost = (e) => {
+    const channel = supabase
+      .channel('admin_blog_sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'blog_posts' }, () => {
+        fetchPosts();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const fetchPosts = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('blog_posts')
+      .select('*')
+      .order('published_at', { ascending: false });
+    
+    if (!error && data) {
+      setRows(data.map(p => ({
+        ...p,
+        excerpt: (p.content || '').substring(0, 100) + '...',
+        initials: (p.author || 'Admin').split(' ').slice(0, 2).map(n => n[0]).join(''),
+        date: p.published_at ? new Date(p.published_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : 'Draft',
+        image: p.image_url || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCRekhJOV60boGR62RSEEl5u1opK6DPxroifkEtnyPefe395jZqzk4KqPCgMv-_uvrAL2iBckL4y2qAPPNuiZl6qcC0PJTqibmtg1KkMq8bgntYJ7u-z2pD5BmoqwnRD0gTdn-Fv8Eh_Zhen4uI9kW9rhle4_B5LTXi1Zd22ZSMDnBTAWktUxlvYuXCWLpdsqNSFuT-lwqDO0pQUEpOzN0DDFLeQ2d-KXLUFPnPyyAATfwwF72eZ2LgqwQrkt9xZhFB40toVHhexmDG'
+      })));
+    } else if (error) {
+      console.error('Error fetching blog posts:', error);
+    }
+    setLoading(false);
+  };
+
+  const handleCreatePost = async (e) => {
     e.preventDefault();
     if (!form.title || !form.author) return;
 
-    const initials = form.author
-      .split(' ')
-      .slice(0, 2)
-      .map((n) => n[0]?.toUpperCase() || '')
-      .join('');
+    const postData = {
+      title: form.title,
+      author: form.author,
+      content: form.content,
+      image_url: form.image,
+      published_at: new Date().toISOString(),
+      status: 'Published'
+    };
 
-    setRows((prev) => [
-      {
-        ...form,
-        initials,
-        date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-        status: 'Draft',
-      },
-      ...prev,
-    ]);
-
-    setForm({
-      title: '',
-      author: '',
-      excerpt: '',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCRekhJOV60boGR62RSEEl5u1opK6DPxroifkEtnyPefe395jZqzk4KqPCgMv-_uvrAL2iBckL4y2qAPPNuiZl6qcC0PJTqibmtg1KkMq8bgntYJ7u-z2pD5BmoqwnRD0gTdn-Fv8Eh_Zhen4uI9kW9rhle4_B5LTXi1Zd22ZSMDnBTAWktUxlvYuXCWLpdsqNSFuT-lwqDO0pQUEpOzN0DDFLeQ2d-KXLUFPnPyyAATfwwF72eZ2LgqwQrkt9xZhFB40toVHhexmDG',
-    });
-    setPostOpen(false);
+    const { error } = await supabase.from('blog_posts').insert([postData]);
+    
+    if (!error) {
+      fetchPosts();
+      setForm({
+          title: '',
+          author: '',
+          content: '',
+          image: '',
+      });
+      setPostOpen(false);
+    } else {
+      console.error('Error saving blog post:', error);
+      alert('Failed to save post: ' + error.message);
+    }
   };
 
   const posts = rows;
@@ -99,20 +108,20 @@ export default function Blog() {
         <div className="mb-12 grid grid-cols-1 gap-4 md:grid-cols-4">
           <div className="rounded-xl bg-white p-6 shadow-[0_12px_40px_rgba(28,27,27,0.06)]">
             <p className="mb-1 text-sm font-medium text-[#5e5e5e]">Total Posts</p>
-            <p className="text-3xl font-bold text-[#1c1b1b]">124</p>
+            <p className="text-3xl font-bold text-[#1c1b1b]">{rows.length}</p>
           </div>
           <div className="rounded-xl bg-white p-6 shadow-[0_12px_40px_rgba(28,27,27,0.06)]">
             <p className="mb-1 text-sm font-medium text-[#5e5e5e]">Published</p>
-            <p className="text-3xl font-bold text-[#9e2016]">89</p>
+            <p className="text-3xl font-bold text-[#9e2016]">{rows.filter(r => r.status === 'Published').length}</p>
           </div>
           <div className="rounded-xl bg-white p-6 shadow-[0_12px_40px_rgba(28,27,27,0.06)]">
             <p className="mb-1 text-sm font-medium text-[#5e5e5e]">Drafts</p>
-            <p className="text-3xl font-bold text-[#5e5e5e]">35</p>
+            <p className="text-3xl font-bold text-[#5e5e5e]">{rows.filter(r => r.status === 'Draft').length}</p>
           </div>
           <div className="flex items-center justify-between rounded-xl bg-[#ffdad5] p-6 shadow-[0_12px_40px_rgba(28,27,27,0.06)]">
             <div>
-              <p className="mb-1 text-sm font-medium text-[#8e130c]">This Month</p>
-              <p className="text-3xl font-bold text-[#9e2016]">+12</p>
+              <p className="mb-1 text-sm font-medium text-[#8e130c]">Recent Growth</p>
+              <p className="text-3xl font-bold text-[#9e2016]">Dynamic</p>
             </div>
             <span className="material-symbols-outlined text-4xl text-[#9e2016]/40">trending_up</span>
           </div>
@@ -196,8 +205,10 @@ export default function Blog() {
                         <button 
                           className="rounded-xl p-2 text-[#5e5e5e] transition-all hover:bg-[#ffdad5] hover:text-[#9e2016]" 
                           title={post.status === 'Draft' ? 'Publish' : 'Unpublish'}
-                          onClick={() => {
-                            setRows(prev => prev.map(p => p.title === post.title ? { ...p, status: p.status === 'Draft' ? 'Published' : 'Draft' } : p));
+                          onClick={async () => {
+                            const newStatus = post.status === 'Draft' ? 'Published' : 'Draft';
+                            await supabase.from('blog_posts').update({ status: newStatus }).eq('id', post.id);
+                            fetchPosts();
                           }}
                         >
                           <span className="material-symbols-outlined">{post.status === 'Draft' ? 'publish' : 'visibility_off'}</span>
@@ -208,7 +219,10 @@ export default function Blog() {
                         <button 
                           className="rounded-xl p-2 text-[#5e5e5e] transition-all hover:bg-[#ffdad6] hover:text-[#ba1a1a]" 
                           title="Delete"
-                          onClick={() => setRows(prev => prev.filter(p => p.title !== post.title))}
+                          onClick={async () => {
+                            await supabase.from('blog_posts').delete().eq('id', post.id);
+                            fetchPosts();
+                          }}
                         >
                           <span className="material-symbols-outlined">delete</span>
                         </button>
@@ -285,28 +299,48 @@ export default function Blog() {
                       onChange={(e) => setForm({ ...form, author: e.target.value })}
                     />
                   </div>
-                  {/* Image URL */}
+                  {/* Image Upload */}
                   <div className="space-y-2">
-                    <label className="ml-1 text-sm font-bold uppercase tracking-wider text-[#5e5e5e]">Header Image URL</label>
-                    <input
-                      className="w-full rounded-xl border-none bg-[#f6f3f2] px-4 py-3.5 transition-all focus:bg-white focus:ring-2 focus:ring-[#9e2016]/20"
-                      placeholder="Enter image URL..."
-                      type="text"
-                      value={form.image}
-                      onChange={(e) => setForm({ ...form, image: e.target.value })}
-                    />
+                    <label className="ml-1 text-sm font-bold uppercase tracking-wider text-[#5e5e5e]">Header Image</label>
+                    <div className="flex items-center gap-4">
+                      {form.image && <img src={form.image} className="w-16 h-16 rounded-xl object-cover" />}
+                      <div className="flex-1 relative">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          id="blog-image-upload"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setUploading(true);
+                              const url = await uploadChurchAsset(file);
+                              if (url) setForm({ ...form, image: url });
+                              setUploading(false);
+                            }
+                          }}
+                        />
+                        <label 
+                          htmlFor="blog-image-upload"
+                          className="flex items-center justify-center gap-2 w-full rounded-xl border-2 border-dashed border-[#8d706c]/30 py-3.5 text-sm font-bold text-[#5e5e5e] cursor-pointer hover:bg-[#f6f3f2] transition-all"
+                        >
+                          <span className="material-symbols-outlined">{uploading ? 'sync' : 'add_photo_alternate'}</span>
+                          {uploading ? 'Uploading...' : form.image ? 'Change Image' : 'Click to Upload'}
+                        </label>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                {/* Excerpt */}
+                {/* Content */}
                 <div className="space-y-2">
-                  <label className="ml-1 text-sm font-bold uppercase tracking-wider text-[#5e5e5e]">Short Excerpt</label>
+                  <label className="ml-1 text-sm font-bold uppercase tracking-wider text-[#5e5e5e]">Post Content</label>
                   <textarea
                     className="w-full resize-none rounded-xl border-none bg-[#f6f3f2] px-4 py-3.5 transition-all focus:bg-white focus:ring-2 focus:ring-[#9e2016]/20"
-                    placeholder="Provide a brief summary for the dashboard..."
-                    rows={3}
-                    value={form.excerpt}
+                    placeholder="Write the full content of your announcement here..."
+                    rows={6}
+                    value={form.content}
                     required
-                    onChange={(e) => setForm({ ...form, excerpt: e.target.value })}
+                    onChange={(e) => setForm({ ...form, content: e.target.value })}
                   />
                 </div>
               </form>
@@ -318,7 +352,7 @@ export default function Blog() {
                 form="post-form"
                 type="submit"
               >
-                Save as Draft
+                Save
               </button>
               <button className="px-8 py-4 font-bold text-[#5e5e5e] transition-colors hover:text-[#1c1b1b]" onClick={() => setPostOpen(false)} type="button">
                 Cancel

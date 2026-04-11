@@ -10,65 +10,49 @@ import womenImage from "@/assets/615875304_122202142484563087_586319240370797820
 import childrenImage from "@/assets/630903071_122204749082563087_148430488719588598_n.jpg";
 import mediaImage from "@/assets/616582907_122201867060563087_8134349422166194362_n.jpg";
 import youthImage from "@/assets/569060568_122188550120563087_4196041456379429423_n.jpg";
+import { supabase } from "@/lib/supabase";
+import { useState, useEffect } from "react";
+import * as LucideIcons from "lucide-react";
 
-const ministries = [
-  {
-    id: "men",
-    name: "Men's Ministry",
-    description: "Empowering men to lead with faith, integrity, and purpose. Our men's fellowship provides biblical teaching, mentorship, and support for men of all ages.",
-    activities: ["Monthly Men's Breakfast", "Bible Study Groups", "Mentorship Program", "Community Outreach"],
-    icon: Briefcase,
-    color: "bg-blue-500",
-    image: menImage,
-  },
-  {
-    id: "women",
-    name: "Women's Ministry",
-    description: "Building strong women of virtue, prayer, and purpose. We nurture spiritual growth through fellowship, teaching, and service.",
-    activities: ["Women's Fellowship", "Prayer Meetings", "Annual Conference", "Skill Development"],
-    icon: Heart,
-    color: "bg-pink-500",
-    image: womenImage,
-  },
-  {
-    id: "youth",
-    name: "Youth Ministry",
-    description: "Inspiring and equipping the next generation for Christ. Our youth programs engage teenagers and young adults with relevant, spirit-filled activities.",
-    activities: ["Friday Youth Night", "Youth Camp", "Drama & Music", "Leadership Training"],
-    icon: Music,
-    color: "bg-purple-500",
-    image: youthImage,
-  },
-  {
-    id: "children",
-    name: "Children's Church",
-    description: "Teaching children the foundations of faith in fun and engaging ways. Every Sunday, children experience worship, Bible stories, and activities designed for them.",
-    activities: ["Sunday School", "Vacation Bible School", "Children's Choir", "Family Events"],
-    icon: Baby,
-    color: "bg-green-500",
-    image: childrenImage,
-  },
-  {
-    id: "media",
-    name: "Media & Technical",
-    description: "Using technology to extend our reach and enhance worship. Our media team handles sound, video, livestreaming, and digital communication.",
-    activities: ["Live Streaming", "Sound & Lighting", "Social Media", "Video Production"],
-    icon: Mic,
-    color: "bg-cyan-500",
-    image: mediaImage,
-  },
-  {
-    id: "music",
-    name: "Music Ministry",
-    description: "Leading worship through music and song. Our music ministry creates an atmosphere of praise through choirs, bands, and instrumental performances.",
-    activities: ["Choir Practice", "Worship Team", "Instrumental Ensemble", "Special Music Events"],
-    icon: Music,
-    color: "bg-indigo-500",
-    image: musicImage,
-  },
-];
+// Seed data removed, now fetching from Supabase
 
 export default function MinistriesPage() {
+  const [ministries, setMinistries] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchMinistries() {
+      const { data, error } = await supabase
+        .from('ministries')
+        .select('*');
+      
+      if (!error && data) {
+        setMinistries(data.map(m => {
+          // Map icons from string to Lucide component
+          let iconName = m.icon.charAt(0).toUpperCase() + m.icon.slice(1);
+          if (iconName === 'Groups') iconName = 'Users';
+          if (iconName === 'Public') iconName = 'Globe';
+          if (iconName === 'Female') iconName = 'Heart';
+          if (iconName === 'Male') iconName = 'Briefcase';
+          
+          const IconComponent = (LucideIcons as any)[iconName] || LucideIcons.Users;
+          
+          return {
+            id: m.id,
+            name: m.name,
+            description: m.description,
+            activities: m.activities || ["Regular Fellowship", "Community Service", "Bible Study"],
+            icon: IconComponent,
+            color: "bg-church-red",
+            image: m.image_url || heroImage
+          };
+        }));
+      }
+      setLoading(false);
+    }
+    fetchMinistries();
+  }, []);
+
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -107,7 +91,10 @@ export default function MinistriesPage() {
         <section className="py-20 bg-church-cream">
           <div className="container mx-auto px-6">
             <div className="space-y-16">
-              {ministries.map((ministry, index) => (
+              {loading ? (
+                <div className="text-center py-20 text-muted-foreground">Loading ministries...</div>
+              ) : ministries.length > 0 ? (
+                ministries.map((ministry, index) => (
                 <motion.div
                   key={ministry.id}
                   id={ministry.id}
@@ -157,7 +144,10 @@ export default function MinistriesPage() {
                     </div>
                   </div>
                 </motion.div>
-              ))}
+              ))
+              ) : (
+                <div className="text-center py-20 text-muted-foreground">Check back soon for ministry updates.</div>
+              )}
             </div>
           </div>
         </section>

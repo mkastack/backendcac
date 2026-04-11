@@ -1,41 +1,48 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ArrowRight, Calendar, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import prayerImage from "@/assets/7.jpeg";
 
-
-const featuredPosts = [
-  {
-    id: 1,
-    title: "Walking in Divine Purpose: A New Year Message",
-    excerpt: "Discover how to align your daily life with God's ultimate plan for you...",
-    author: "Pastor James Mensah",
-    date: "Jan 15, 2026",
-    category: "Inspiration",
-    image: "https://images.unsplash.com/photo-1438232992991-995b7058bbb3?auto=format&fit=crop&q=80&w=800",
-  },
-  {
-    id: 2,
-    title: "Highlights from the Solid Foundation 2026",
-    excerpt: "Relive the powerful moments of worship and transformation...",
-    author: "Elder Grace Owusu",
-    date: "Jan 12, 2026",
-    category: "Church News",
-    image: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&q=80&w=800",
-  },
-  {
-    id: 3,
-    title: "The Power of Persistent Prayer",
-    excerpt: "How to overcome challenges in prayer and see God's manifest power...",
-    author: "Deacon Samuel Asante",
-    date: "Jan 08, 2026",
-    category: "Testimony",
-    image: prayerImage,
-  },
-];
-
 export function BlogSection() {
+  const [posts, setPosts] = useState<any[]>([]);
+
+  const fetchLatestPosts = async () => {
+    const { data, error } = await supabase
+      .from('blog_posts')
+      .select('*')
+      .eq('status', 'Published')
+      .order('published_at', { ascending: false })
+      .limit(3);
+    
+    if (!error && data) {
+      setPosts(data.map(p => ({
+        ...p,
+        excerpt: (p.content || '').substring(0, 100) + '...',
+        image: p.image_url || prayerImage,
+        date: p.published_at ? new Date(p.published_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : 'Recently',
+        author: p.author || 'Church Admin'
+      })));
+    }
+  };
+
+  useEffect(() => {
+    fetchLatestPosts();
+
+    const channel = supabase
+      .channel('home_blog_sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'blog_posts' }, () => {
+        fetchLatestPosts();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   return (
     <section className="py-20 lg:py-28 bg-church-cream overflow-hidden">
       <div className="container mx-auto px-6">
@@ -74,7 +81,7 @@ export function BlogSection() {
 
         {/* Blog Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {featuredPosts.map((post, index) => (
+          {posts.map((post, index) => (
             <motion.article
               key={post.id}
               initial={{ opacity: 0, y: 30 }}
@@ -102,13 +109,13 @@ export function BlogSection() {
                   </div>
                 </div>
                 <h3 className="font-serif font-bold text-xl text-foreground mb-3 leading-tight group-hover:text-church-red transition-colors line-clamp-2">
-                  <Link to={`/blog/${post.id}`}>{post.title}</Link>
+                  <Link to="/blog">{post.title}</Link>
                 </h3>
                 <p className="text-muted-foreground text-sm line-clamp-2 mb-6 font-body">
                   {post.excerpt}
                 </p>
                 <Link 
-                  to={`/blog/${post.id}`}
+                  to="/blog"
                   className="inline-flex items-center gap-2 text-church-red font-bold text-xs uppercase tracking-widest hover:text-church-red/80 transition-colors group/link"
                 >
                   Read Article

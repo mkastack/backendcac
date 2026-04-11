@@ -1,17 +1,38 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import churchLogo from '../images/church-logo.png';
+import { supabase } from '../../lib/supabase';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    if (email === 'admin@cacbubiashie.org' && password === 'admin123') navigate('/admin/dashboard');
-    else setError('Invalid credentials');
+    setLoading(true);
+    setError('');
+
+    // Developer Fallback for requested credentials
+    if (email === 'christapostolicchurch@gmail.com' && password === 'cacbubiashie@30') {
+      navigate('/admin/dashboard');
+      setLoading(false);
+      return;
+    }
+
+    const { data, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (authError) {
+      setError(authError.message);
+    } else {
+      navigate('/admin/dashboard');
+    }
+    setLoading(false);
   };
 
   return (
@@ -130,10 +151,11 @@ export default function Login() {
               {/* Action Buttons */}
               <div className="pt-6 space-y-4">
                 <button
-                  className="w-full py-4 bg-[#302950] text-white font-bold rounded-full hover:bg-black transition-all transform active:scale-[0.98] shadow-lg shadow-[#302950]/10"
+                  disabled={loading}
+                  className="w-full py-4 bg-[#302950] text-white font-bold rounded-full hover:bg-black transition-all transform active:scale-[0.98] shadow-lg shadow-[#302950]/10 disabled:opacity-50"
                   type="submit"
                 >
-                  Login Now
+                  {loading ? 'Authenticating...' : 'Login Now'}
                 </button>
                 <button
                   className="flex items-center justify-center w-full py-4 bg-transparent border border-[#79719d]/20 text-[#302950] font-bold rounded-full hover:bg-[#f4eeff] transition-all transform active:scale-[0.98]"
