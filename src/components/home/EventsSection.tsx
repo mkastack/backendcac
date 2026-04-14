@@ -2,38 +2,61 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Calendar, MapPin, Clock, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-const upcomingEvents = [
-  {
-    id: 1,
-    title: "Youth Fellowship Night",
-    date: "Jan 10, 2026",
-    time: "5:00 PM",
-    location: "Youth Hall",
-    description: "An evening of worship, games, and fellowship for young people.",
-    featured: true,
-  },
-  {
-    id: 2,
-    title: "Marriage Enrichment Seminar",
-    date: "Jan 17, 2026",
-    time: "9:00 AM - 2:00 PM",
-    location: "Conference Room",
-    description: "Strengthen your marriage with biblical principles and practical guidance.",
-    featured: false,
-  },
-];
-
-const announcements = [
-  {
-    id: 1,
-    title: "Choir Auditions Open",
-    date: "Jan 15, 2026",
-    category: "Ministry",
-  },
-];
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 export function EventsSection() {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchEvents();
+
+    // Subscribe to real-time updates
+    const channel = supabase
+      .channel('home_events_sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => {
+        fetchEvents();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const fetchEvents = async () => {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .gte('date', new Date().toISOString().split('T')[0]) // Only future events
+      .order('date', { ascending: true })
+      .limit(3); // Show only 3 recent events
+
+    if (!error && data) {
+      setEvents(data.map(event => ({
+        id: event.id,
+        title: event.title,
+        date: new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+        time: event.time || 'TBD',
+        location: event.location || 'TBD',
+        description: event.description || 'Join us for this upcoming event.',
+        category: event.category || 'General',
+        featured: event.is_featured || false,
+        image: event.image_url
+      })));
+    }
+    setLoading(false);
+  };
+
+  const announcements = [
+    {
+      id: 1,
+      title: "Choir Auditions Open",
+      date: "Jan 15, 2026",
+      category: "Ministry",
+    },
+  ];
   return (
     <section className="py-20 lg:py-28 bg-church-light-blue">
       <div className="container mx-auto px-6">
@@ -55,64 +78,70 @@ export function EventsSection() {
             </motion.div>
 
             <div className="space-y-6">
-              {upcomingEvents.map((event, index) => (
-                <motion.div
-                  key={event.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                  className="group bg-card relative border border-border rounded-2xl overflow-hidden shadow-[0_3px_10px_rgba(0,0,0,0.06)] hover:!shadow-[0_12px_32px_rgba(0,0,0,0.08)] transition-all duration-300 w-full"
-                >
-                  {/* Left Accent Bar */}
-                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#ba1a1a]" />
+              {loading ? (
+                <div className="text-center py-10 text-muted-foreground">Loading events...</div>
+              ) : events.length > 0 ? (
+                events.map((event, index) => (
+                  <motion.div
+                    key={event.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.1 }}
+                    className="group bg-card relative border border-border rounded-2xl overflow-hidden shadow-[0_3px_10px_rgba(0,0,0,0.06)] hover:!shadow-[0_12px_32px_rgba(0,0,0,0.08)] transition-all duration-300 w-full"
+                  >
+                    {/* Left Accent Bar */}
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#ba1a1a]" />
 
-                  <div className="p-5 sm:p-6 flex flex-col md:flex-row gap-6">
-                    {/* Left Content */}
-                    <div className="flex-1">
-                      <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <span className="px-4 py-1.5 bg-[#5b21b6]/10 text-[#5b21b6] rounded-full text-[10px] font-extrabold uppercase tracking-widest">
-                          Youth
-                        </span>
-                        {event.featured && (
-                          <span className="px-4 py-1.5 bg-[#ffdad5] text-[#ba1a1a] rounded-full text-[10px] font-extrabold uppercase tracking-widest">
-                            Featured
+                    <div className="p-5 sm:p-6 flex flex-col md:flex-row gap-6">
+                      {/* Left Content */}
+                      <div className="flex-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <span className="px-4 py-1.5 bg-[#5b21b6]/10 text-[#5b21b6] rounded-full text-[10px] font-extrabold uppercase tracking-widest">
+                            {event.category}
                           </span>
-                        )}
-                      </div>
-                      <h3 className="font-heading font-bold text-xl text-[#1c1b1b] mb-2 group-hover:text-[#ba1a1a] transition-colors">
-                        {event.title}
-                      </h3>
-                      <p className="text-[#5e5e5e] text-sm leading-relaxed mb-3">{event.description}</p>
-                    </div>
-
-                    {/* Right Details Panel */}
-                    <div className="md:w-[260px] flex flex-col justify-between gap-4 md:border-l md:border-border md:pl-6">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-3 text-[#1c1b1b] text-sm">
-                          <Calendar className="w-4 h-4 text-[#ba1a1a]" />
-                          <span className="font-semibold">{event.date}</span>
+                          {event.featured && (
+                            <span className="px-4 py-1.5 bg-[#ffdad5] text-[#ba1a1a] rounded-full text-[10px] font-extrabold uppercase tracking-widest">
+                              Featured
+                            </span>
+                          )}
                         </div>
-                        <div className="flex items-center gap-3 text-[#1c1b1b] text-sm">
-                          <Clock className="w-4 h-4 text-[#ba1a1a]" />
-                          <span className="font-semibold">{event.time}</span>
-                        </div>
-                        <div className="flex items-center gap-3 text-[#1c1b1b] text-sm">
-                          <MapPin className="w-4 h-4 text-[#ba1a1a]" />
-                          <span className="font-semibold">{event.location}</span>
-                        </div>
+                        <h3 className="font-heading font-bold text-xl text-[#1c1b1b] mb-2 group-hover:text-[#ba1a1a] transition-colors">
+                          {event.title}
+                        </h3>
+                        <p className="text-[#5e5e5e] text-sm leading-relaxed mb-3">{event.description}</p>
                       </div>
 
-                      <Button 
-                        size="sm"
-                        className="w-full bg-[#1e3a8a] text-white hover:bg-[#1e40af] rounded-lg font-bold shadow-md shadow-[#1e3a8a]/20"
-                      >
-                        Join Now
-                      </Button>
+                      {/* Right Details Panel */}
+                      <div className="md:w-[260px] flex flex-col justify-between gap-4 md:border-l md:border-border md:pl-6">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-3 text-[#1c1b1b] text-sm">
+                            <Calendar className="w-4 h-4 text-[#ba1a1a]" />
+                            <span className="font-semibold">{event.date}</span>
+                          </div>
+                          <div className="flex items-center gap-3 text-[#1c1b1b] text-sm">
+                            <Clock className="w-4 h-4 text-[#ba1a1a]" />
+                            <span className="font-semibold">{event.time}</span>
+                          </div>
+                          <div className="flex items-center gap-3 text-[#1c1b1b] text-sm">
+                            <MapPin className="w-4 h-4 text-[#ba1a1a]" />
+                            <span className="font-semibold">{event.location}</span>
+                          </div>
+                        </div>
+
+                        <Button
+                          size="sm"
+                          className="w-full bg-[#1e3a8a] text-white hover:bg-[#1e40af] rounded-lg font-bold shadow-md shadow-[#1e3a8a]/20"
+                        >
+                          Join Now
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                ))
+              ) : (
+                <div className="text-center py-10 text-muted-foreground">No upcoming events at this time.</div>
+              )}
             </div>
 
             <div className="mt-8">

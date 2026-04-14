@@ -117,7 +117,8 @@ export default function Login() {
                   Email Address
                 </label>
                 <input
-                  className="w-full bg-transparent border-0 border-b-2 border-[#79719d]/30 py-3 px-0 focus:ring-0 focus:border-[#4345da] text-[#302950] placeholder:text-[#5e5680]/50 transition-all font-medium"
+                  className="w-full bg-transparent border-0 border-b-2 border-[#79719d]/30 py-3 px-0 focus:ring-0 focus:border-[#4345da] text-[#302950] placeholder:text-[#5e5680]/50 transition-all font-medium outline-none focus:outline-none shadow-none focus:shadow-none"
+                  style={{boxShadow: 'none'}}
                   id="email"
                   name="email"
                   placeholder="name@church.org"
@@ -136,7 +137,8 @@ export default function Login() {
                   Password
                 </label>
                 <input
-                  className="w-full bg-transparent border-0 border-b-2 border-[#79719d]/30 py-3 px-0 focus:ring-0 focus:border-[#4345da] text-[#302950] placeholder:text-[#5e5680]/50 transition-all font-medium"
+                  className="w-full bg-transparent border-0 border-b-2 border-[#79719d]/30 py-3 px-0 focus:ring-0 focus:border-[#4345da] text-[#302950] placeholder:text-[#5e5680]/50 transition-all font-medium outline-none focus:outline-none shadow-none focus:shadow-none"
+                  style={{boxShadow: 'none'}}
                   id="password"
                   name="password"
                   placeholder="••••••••"

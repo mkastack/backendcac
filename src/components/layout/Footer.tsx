@@ -23,9 +23,9 @@ const ministries = [
 ];
 
 const socialLinks = [
-  { icon: Facebook, url: "#", label: "Facebook" },
-  { icon: Youtube, url: "#", label: "YouTube" },
-  { icon: Instagram, url: "#", label: "Instagram" },
+  { icon: Facebook, url: "https://web.facebook.com/profile.php?id=61566892619889", label: "Facebook" },
+  { icon: Youtube, url: "https://youtube.com/@cacint_bubiashiecentral?si=pdtWhcEe55Rt3HjI", label: "YouTube" },
+  { icon: Instagram, url: "https://www.instagram.com/cacint_bubiashiecentral?igsh=YnNnOW9tajl5dWg3", label: "Instagram" },
 ];
 
 export function Footer() {
@@ -129,6 +129,7 @@ export function Footer() {
                 <li key={link.name}>
                   <Link
                     to={link.path}
+                    onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })}
                     className="text-white/60 hover:text-church-gold hover:-translate-x-1 inline-block transition-all text-sm font-medium"
                   >
                     {link.name}
@@ -148,6 +149,7 @@ export function Footer() {
                 <li key={ministry.name}>
                   <Link
                     to={ministry.path}
+                    onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })}
                     className="text-white/60 hover:text-church-gold hover:-translate-x-1 inline-block transition-all text-sm font-medium"
                   >
                     {ministry.name}
@@ -228,13 +230,13 @@ export function Footer() {
               © {new Date().getFullYear()}. ALL RIGHTS RESERVED. DESIGNED FOR CACI BUBIASHIE CENTRAL.
             </p>
             <div className="flex items-center gap-6">
-              <Link to="/privacy" className="text-white/40 hover:text-white text-[10px] font-bold transition-colors uppercase tracking-widest">
+              <Link to="/privacy" onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })} className="text-white/40 hover:text-white text-[10px] font-bold transition-colors uppercase tracking-widest">
                 Privacy
               </Link>
-              <Link to="/terms" className="text-white/40 hover:text-white text-[10px] font-bold transition-colors uppercase tracking-widest">
+              <Link to="/terms" onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })} className="text-white/40 hover:text-white text-[10px] font-bold transition-colors uppercase tracking-widest">
                 Terms
               </Link>
-              <Link to="/admin" className="text-white/40 hover:text-white text-[10px] font-bold transition-colors uppercase tracking-widest">
+              <Link to="/admin" onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })} className="text-white/40 hover:text-white text-[10px] font-bold transition-colors uppercase tracking-widest">
                 Admin
               </Link>
               <button

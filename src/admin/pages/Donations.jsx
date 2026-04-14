@@ -22,7 +22,7 @@ export default function Donations() {
       setDonations(data.map(d => ({
         ...d,
         name: d.donor_name,
-        amount: `$${d.amount.toLocaleString()}`,
+        amount: `GH₵${d.amount.toLocaleString()}`,
         date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
         dateFilter: new Date(d.date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
         methodIcon: 'payments',
@@ -41,7 +41,7 @@ export default function Donations() {
   const totals = useMemo(() => {
     const res = { tithe: 0, mission: 0, building: 0, total: 0 };
     donations.forEach(d => {
-      const val = parseFloat(d.amount.replace(/[$,]/g, ''));
+      const val = parseFloat(d.amount.replace(/[GH₵,]/g, ''));
       res.total += val;
       if (d.purpose === 'Tithe') res.tithe += val;
       if (d.purpose === 'Mission Fund') res.mission += val;
@@ -60,7 +60,7 @@ export default function Donations() {
     const headers = ['Donor Name', 'Amount', 'Date', 'Method', 'Purpose', 'Status'];
     const rows = filteredDonations.map(d => [
       d.name,
-      d.amount.replace(',', ''), // Remove comma for CSV numeric safety if needed, or keep for display
+      d.amount.replace(/[GH₵,]/g, ''), // Remove currency symbol and comma for CSV numeric safety if needed
       d.date,
       d.methodText,
       d.purpose,

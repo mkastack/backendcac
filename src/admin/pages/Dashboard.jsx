@@ -15,14 +15,32 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [recentActivity, setRecentActivity] = useState([]);
   const [ministries, setMinistries] = useState([]);
+  const [whatsappNotifications, setWhatsappNotifications] = useState([]);
+  const [greeting, setGreeting] = useState({ text: '', emoji: '', time: '' });
+
+  const updateGreeting = () => {
+    const now = new Date();
+    const hour = now.getHours();
+    const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    let text, emoji;
+    if (hour >= 5 && hour < 12) { text = 'Good Morning'; emoji = '🌅'; }
+    else if (hour >= 12 && hour < 17) { text = 'Good Afternoon'; emoji = '☀️'; }
+    else if (hour >= 17 && hour < 21) { text = 'Good Evening'; emoji = '🌇'; }
+    else { text = 'Good Night'; emoji = '🌙'; }
+    setGreeting({ text, emoji, time: timeStr, date: dateStr });
+  };
 
   useEffect(() => {
+    updateGreeting();
+    const clockInterval = setInterval(updateGreeting, 1000);
     fetchStats();
     fetchRecentActivity();
     fetchMinistries();
+    fetchWhatsAppNotifications();
 
     // Set up Realtime subscriptions for all relevant tables
-    const tables = ['members', 'donations', 'events', 'prayer_requests', 'sermons', 'blog_posts', 'ministries'];
+    const tables = ['members', 'donations', 'events', 'prayer_requests', 'sermons', 'blog_posts', 'ministries', 'whatsapp_notifications'];
     const channel = supabase.channel('dashboard_stats_sync');
     
     tables.forEach(table => {
@@ -30,12 +48,14 @@ export default function Dashboard() {
         fetchStats();
         fetchRecentActivity();
         fetchMinistries();
+        fetchWhatsAppNotifications();
       });
     });
 
     channel.subscribe();
 
     return () => {
+      clearInterval(clockInterval);
       supabase.removeChannel(channel);
     };
   }, []);
@@ -115,7 +135,7 @@ export default function Dashboard() {
         icon: 'favorite',
         iconBg: 'bg-orange-100 text-orange-700',
         title: d.donor_name,
-        action: `made a generous donation of $${d.amount}.`,
+        action: `made a generous donation of GH₵${d.amount}.`,
         detail: `Allocated to: ${d.purpose || 'General Fund'}`,
         time: d.created_at,
         id: d.id
@@ -147,6 +167,11 @@ export default function Dashboard() {
     if (data) setMinistries(data);
   }
 
+  async function fetchWhatsAppNotifications() {
+    const { data } = await supabase.from('whatsapp_notifications').select('*').order('created_at', { ascending: false }).limit(10);
+    if (data) setWhatsappNotifications(data);
+  }
+
   function timeAgo(dateStr) {
     const now = new Date();
     const past = new Date(dateStr);
@@ -164,10 +189,19 @@ export default function Dashboard() {
       <main className="mx-auto max-w-screen-2xl px-8 pb-12 pt-8">
         <header className="mb-10 flex flex-col items-end justify-between gap-6 md:flex-row">
           <div className="max-w-2xl">
-            <h1 className="mb-2 text-4xl font-extrabold tracking-tight text-[#1c1b1b]">Welcome back, Admin</h1>
-            <p className="text-[#5e5e5e]">Here is what's happening across the congregation this week. Your leadership and oversight guide our spiritual mission.</p>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-2xl">{greeting.emoji}</span>
+              <span className="text-sm font-semibold text-[#9e2016] uppercase tracking-widest">{greeting.date}</span>
+            </div>
+            <h1 className="mb-2 text-4xl font-extrabold tracking-tight text-[#1c1b1b]">
+              {greeting.text}, Admin!
+            </h1>
+            <p className="text-[#5e5e5e]">Here is what's happening across the congregation today. Your leadership and oversight guide our spiritual mission.</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-col items-end gap-2">
+            <div className="font-mono text-3xl font-extrabold text-[#1c1b1b] tracking-tight tabular-nums">
+              {greeting.time}
+            </div>
             <div className="flex -space-x-3">
               <img className="h-10 w-10 rounded-full border-2 border-white" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJTZv_nXGQtr3ozI2hqNcBIlg9CoiFT6REG8fsmAhZxwEw7oDgan35ucLBhize0zt0o_iHYGp4QXGs5Feo37Z4OmpHGkmkidd4ggZrME7z9stTzYkgvDTTjgVIJIiIarLRlU3ndlQs7DnNNol9AOGhXbpa3FH0Ers1r0ReGXx0ePafCorAg_HJlTUL6EFHKTVJLLkWxqQWeP8NKWoke7fDQMd1S-lY9CAAO8P01ax9gkuYfcIn1q3K7p4OXdK18f2k2yUO3bRPDsSY" />
               <img className="h-10 w-10 rounded-full border-2 border-white" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTbd4RlYaQCFtbuOvHSVVsGi7qbbcbWVPRyDe1ZXnvwqVF4AcgQrsXi3Wafettd4TMHwvCOsqDByVMv4IKInHG5igNlM5B3j2xoFsPrnYr-jPc8aNQ1ApjuFxN-jhV6RSzD73oiiuXKucLVkqK-cZwaB2EZBGidtXU8pd9ectRrDD4KtHfH2lEAtmmnGw9ZG45RHMDJnHnNBPKp-q_AgyggHPgRuMBa4i3piJ8H6d3NGDttmDNeMU9hBDICCS59A4UOFsv0XoJrZvw" />
@@ -205,7 +239,7 @@ export default function Dashboard() {
             <div>
               <h3 className="mb-1 text-sm font-medium text-[#5e5e5e]">Total Donations</h3>
               <div className="flex items-end justify-between">
-                <span className="text-4xl font-extrabold tracking-tighter text-[#1c1b1b]">${stats.donations.toLocaleString()}</span>
+                <span className="text-4xl font-extrabold tracking-tighter text-[#1c1b1b]">GH₵{stats.donations.toLocaleString()}</span>
               </div>
               <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
                 <div className="h-full bg-orange-500 transition-all duration-500" style={{ width: `${Math.min((stats.donations / 10000) * 100, 100)}%` }} />
@@ -290,6 +324,74 @@ export default function Dashboard() {
             </div>
           </div>
         </section>
+
+        {/* WhatsApp Notifications Section */}
+        {whatsappNotifications.length > 0 && (
+          <section className="mb-12">
+            <div className="overflow-hidden rounded-2xl bg-white shadow-[0_12px_40px_rgba(28,27,27,0.06)]">
+              <div className="flex items-center justify-between bg-green-50 p-6 border-b border-green-100">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-xl bg-green-100 p-2 text-green-700">
+                    <span className="material-symbols-outlined">chat</span>
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold tracking-tight text-[#1c1b1b]">WhatsApp Notifications</h2>
+                    <p className="text-sm text-[#5e5e5e]">Pending ministry join requests ready to send</p>
+                  </div>
+                </div>
+                <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-700">
+                  {whatsappNotifications.filter(n => n.status === 'sent').length} sent automatically
+                </span>
+              </div>
+              <div className="divide-y divide-neutral-50">
+                {whatsappNotifications.slice(0, 5).map((notification) => (
+                  <div key={notification.id} className="p-6 hover:bg-neutral-50 transition-colors">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-grow min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="inline-flex items-center gap-1 text-xs font-bold text-green-700 bg-green-50 px-2 py-1 rounded-full">
+                            <span className="material-symbols-outlined text-[14px]">church</span>
+                            {notification.ministry_name}
+                          </span>
+                          <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-full ${
+                            notification.status === 'pending' ? 'bg-orange-100 text-orange-700' :
+                            notification.status === 'sent' ? 'bg-green-100 text-green-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>
+                            {notification.status === 'sent' ? 'Auto-Sent' : notification.status}
+                          </span>
+                        </div>
+                        <p className="text-sm text-[#5e5e5e] mb-3 line-clamp-2">{notification.message}</p>
+                        <div className="flex items-center gap-4 text-xs text-[#8d706c]">
+                          <span>{timeAgo(notification.created_at)}</span>
+                          <span>To: {notification.recipient_number}</span>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <a
+                          href={notification.whatsapp_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">visibility</span>
+                          View Message
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {whatsappNotifications.length > 5 && (
+                <div className="p-4 bg-neutral-50 border-t border-neutral-100 text-center">
+                  <button className="text-sm font-bold text-[#9e2016] hover:underline">
+                    View All Notifications →
+                  </button>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
         <section className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="overflow-hidden rounded-2xl bg-white shadow-[0_12px_40px_rgba(28,27,27,0.06)] lg:col-span-2">

@@ -63,6 +63,7 @@ export default function Sermons() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [mediaUploading, setMediaUploading] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [activeMenuId, setActiveMenuId] = useState(null);
 
@@ -116,6 +117,11 @@ export default function Sermons() {
     e.preventDefault();
     if (!form.title || !form.speaker) {
       setNotice('Please add title and speaker.');
+      return;
+    }
+
+    if (!form.mediaUrl && form.type !== 'Text') {
+      setNotice('Please provide a media URL or upload a media file.');
       return;
     }
 
@@ -285,14 +291,24 @@ export default function Sermons() {
                     </div>
                   </td>
                   <td className="rounded-r-2xl px-6 py-5 text-right relative">
-                    <button 
-                      className="rounded-full p-2 text-[#8d706c] transition-colors hover:bg-[#eae7e7]" 
-                      onClick={() => setActiveMenuId(activeMenuId === row.id ? null : row.id)}
-                    >
-                      ⋮
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        className="rounded-full p-2 text-[#8d706c] transition-colors hover:bg-[#ffe5e5] hover:text-red-600"
+                        aria-label={`Delete sermon ${row.title}`}
+                        onClick={() => deleteSermon(row.id)}
+                      >
+                        <span className="material-symbols-outlined">delete</span>
+                      </button>
+                      <button 
+                        className="rounded-full p-2 text-[#8d706c] transition-colors hover:bg-[#eae7e7]" 
+                        onClick={() => setActiveMenuId(activeMenuId === row.id ? null : row.id)}
+                        aria-label={`Open actions for sermon ${row.title}`}
+                      >
+                        ⋮
+                      </button>
+                    </div>
                     {activeMenuId === row.id && (
-                      <div className="absolute right-8 top-12 z-50 flex w-40 flex-col overflow-hidden rounded-xl bg-white shadow-xl border border-neutral-100">
+                      <div className="absolute right-8 top-14 z-50 flex w-40 flex-col overflow-hidden rounded-xl bg-white shadow-xl border border-neutral-100">
                         <button onClick={() => startEdit(row)} className="px-4 py-3 text-left text-sm font-medium text-[#1c1b1b] hover:bg-neutral-50 transition-colors">Edit Sermon</button>
                         <button onClick={() => { deleteSermon(row.id); setActiveMenuId(null); }} className="px-4 py-3 text-left text-sm font-bold text-red-600 hover:bg-red-50 transition-colors">Delete Sermon</button>
                       </div>
@@ -430,8 +446,8 @@ export default function Sermons() {
 
                 {/* File Upload / URL */}
                 <div className="space-y-2">
-                  <label className="ml-1 text-sm font-bold uppercase tracking-wider text-[#59413d]">Media Content URL</label>
-                  <div className="flex gap-2">
+                  <label className="ml-1 text-sm font-bold uppercase tracking-wider text-[#59413d]">Media Content URL / Upload</label>
+                  <div className="flex flex-col gap-3 sm:flex-row">
                     <input
                       className="flex-1 rounded-xl border-none bg-[#f6f3f2] px-4 py-3.5 transition-all focus:bg-white focus:ring-2 focus:ring-[#9e2016]/20"
                       placeholder="Enter YouTube or Audio URL"
@@ -439,7 +455,42 @@ export default function Sermons() {
                       value={form.mediaUrl}
                       onChange={(e) => setForm({ ...form, mediaUrl: e.target.value })}
                     />
+                    <div className="relative w-full sm:w-64">
+                      <input
+                        type="file"
+                        accept={form.type === 'Video' ? 'video/*' : form.type === 'Audio' ? 'audio/*' : '*/*'}
+                        className="hidden"
+                        id="sermon-media-upload"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setMediaUploading(true);
+                          const url = await uploadChurchAsset(file);
+                          if (url) {
+                            setForm({ ...form, mediaUrl: url });
+                            setNotice('Media file uploaded successfully.');
+                          } else {
+                            setNotice('Failed to upload media file. Please try again.');
+                          }
+                          setMediaUploading(false);
+                        }}
+                      />
+                      <label
+                        htmlFor="sermon-media-upload"
+                        className="flex h-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#8d706c]/30 bg-[#f6f3f2] px-4 py-3.5 text-sm font-semibold text-[#59413d] cursor-pointer transition-all hover:bg-[#eae7e7]"
+                      >
+                        <span className="material-symbols-outlined">
+                          {mediaUploading ? 'sync' : 'upload_file'}
+                        </span>
+                        {mediaUploading ? 'Uploading...' : 'Upload File'}
+                      </label>
+                    </div>
                   </div>
+                  {form.mediaUrl && (
+                    <p className="text-sm text-[#59413d]">
+                      Current media URL: <a href={form.mediaUrl} target="_blank" rel="noopener noreferrer" className="font-bold text-[#9e2016] hover:underline">Open media</a>
+                    </p>
+                  )}
                 </div>
                 {/* Description */}
                 <div className="space-y-2">

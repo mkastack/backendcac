@@ -163,10 +163,27 @@ export default function AudioSermonsPage() {
                         </div>
                       </div>
                       <div className="shrink-0 flex sm:flex-col gap-2">
-                        <Button className="bg-church-gold hover:bg-church-gold/90 text-white" size="sm">
+                        <Button 
+                          className="bg-church-gold hover:bg-church-gold/90 text-white" 
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); window.open(sermon.audioUrl, '_blank'); }}
+                        >
                           <Play className="w-4 h-4" />
                         </Button>
-                        <Button variant="outline" className="border-church-gold text-church-gold hover:bg-church-gold/10" size="sm">
+                        <Button 
+                          variant="outline" 
+                          className="border-church-gold text-church-gold hover:bg-church-gold/10" 
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const link = document.createElement('a');
+                            link.href = sermon.audioUrl + "?download=";
+                            link.download = `${sermon.title}.mp3`;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                          }}
+                        >
                           <Download className="w-4 h-4" />
                         </Button>
                       </div>

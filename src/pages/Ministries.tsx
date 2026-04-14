@@ -11,6 +11,7 @@ import childrenImage from "@/assets/630903071_122204749082563087_148430488719588
 import mediaImage from "@/assets/616582907_122201867060563087_8134349422166194362_n.jpg";
 import youthImage from "@/assets/569060568_122188550120563087_4196041456379429423_n.jpg";
 import { supabase } from "@/lib/supabase";
+import { notifyDepartmentHeadWhatsapp } from "@/lib/whatsapp";
 import { useState, useEffect } from "react";
 import * as LucideIcons from "lucide-react";
 
@@ -19,6 +20,12 @@ import * as LucideIcons from "lucide-react";
 export default function MinistriesPage() {
   const [ministries, setMinistries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Join Ministry State
+  const [joinModalMinistry, setJoinModalMinistry] = useState<any | null>(null);
+  const [joinForm, setJoinForm] = useState({ name: '', phone: '', reason: '', aim: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState({ type: '', text: '' });
 
   useEffect(() => {
     async function fetchMinistries() {
@@ -37,11 +44,34 @@ export default function MinistriesPage() {
           
           const IconComponent = (LucideIcons as any)[iconName] || LucideIcons.Users;
           
+          // Assign specific activities based on ministry name
+          let activities = [];
+          const name = m.name.toLowerCase();
+          if (name.includes('music') || name.includes('worship')) {
+            activities = ["Lead Sunday Worship Services", "Organize Choir Practices", "Produce Worship Albums", "Conduct Music Workshops"];
+          } else if (name.includes('youth')) {
+            activities = ["Organize Youth Camps", "Lead Bible Study Sessions", "Plan Outreach Programs", "Mentor Young Adults"];
+          } else if (name.includes('children')) {
+            activities = ["Sunday School Teaching", "Children's Church Programs", "Holiday Bible Clubs", "Parent-Child Activities"];
+          } else if (name.includes('women')) {
+            activities = ["Women's Prayer Meetings", "Ladies' Fellowship Events", "Mother-Daughter Programs", "Community Outreach"];
+          } else if (name.includes('men')) {
+            activities = ["Men's Prayer Breakfasts", "Leadership Development", "Community Service Projects", "Fellowship Activities"];
+          } else if (name.includes('media') || name.includes('technical')) {
+            activities = ["Live Stream Services", "Audio/Video Production", "Social Media Management", "Technical Support"];
+          } else if (name.includes('prayer')) {
+            activities = ["Prayer Meetings", "Intercessory Prayer", "Prayer Retreats", "24/7 Prayer Chain"];
+          } else if (name.includes('evangelism') || name.includes('outreach')) {
+            activities = ["Community Outreach", "Door-to-Door Evangelism", "Mission Trips", "Public Preaching"];
+          } else {
+            activities = m.activities || ["Regular Fellowship", "Community Service", "Bible Study"];
+          }
+          
           return {
             id: m.id,
             name: m.name,
             description: m.description,
-            activities: m.activities || ["Regular Fellowship", "Community Service", "Bible Study"],
+            activities: m.activities || activities,
             icon: IconComponent,
             color: "bg-church-red",
             image: m.image_url || heroImage
@@ -52,6 +82,55 @@ export default function MinistriesPage() {
     }
     fetchMinistries();
   }, []);
+
+  const handleJoinSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!joinModalMinistry) return;
+    
+    setIsSubmitting(true);
+    setSubmitMessage({ type: '', text: '' });
+
+    const { error } = await supabase.from('ministry_join_requests').insert([
+      {
+        ministry_id: joinModalMinistry.id,
+        name: joinForm.name,
+        phone: joinForm.phone,
+        reason: joinForm.reason,
+        aim: joinForm.aim,
+        status: 'Pending'
+      }
+    ]);
+
+    if (!error) {
+      try {
+        const whatsappResult = await notifyDepartmentHeadWhatsapp({
+          ministryName: joinModalMinistry.name,
+          requesterName: joinForm.name,
+          requesterPhone: joinForm.phone,
+          reason: joinForm.reason,
+          aim: joinForm.aim
+        });
+
+        if (whatsappResult.success) {
+          setSubmitMessage({
+            type: 'success',
+            text: 'Request submitted successfully! WhatsApp opened automatically with your message - please click Send to notify the ministry head.'
+          });
+        } else {
+          setSubmitMessage({
+            type: 'warning',
+            text: `Request submitted successfully! However, WhatsApp notification failed: ${whatsappResult.error || 'Unknown error'}. The ministry head will be notified through other means.`
+          });
+        }
+      } catch (notifyError) {
+        console.warn('Failed to send WhatsApp notification:', notifyError);
+        setSubmitMessage({
+          type: 'warning',
+          text: 'Request submitted successfully! However, WhatsApp notification failed. The ministry head will be notified through other means.'
+        });
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -129,7 +208,12 @@ export default function MinistriesPage() {
                             ))}
                           </ul>
                         </div>
-                        <Button variant="churchPrimary">Join This Ministry</Button>
+                        <Button 
+                          variant="churchPrimary" 
+                          onClick={() => setJoinModalMinistry(ministry)}
+                        >
+                          Join This Ministry
+                        </Button>
                       </div>
                       <div className="relative">
                         <div className="absolute inset-0">
@@ -168,6 +252,97 @@ export default function MinistriesPage() {
           </div>
         </section>
       </main>
+
+      {/* Join Ministry Modal */}
+      {joinModalMinistry && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-md">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="w-full max-w-md bg-white/80 backdrop-blur-2xl border border-white/50 rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.12)] relative"
+          >
+            <div className="p-5 border-b border-white/40 flex justify-between items-center bg-white/40">
+              <h3 className="font-serif text-xl font-bold text-foreground flex items-center gap-2">
+                <joinModalMinistry.icon className="w-5 h-5 text-church-red" />
+                Join {joinModalMinistry.name}
+              </h3>
+              <button 
+                onClick={() => setJoinModalMinistry(null)}
+                className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <form onSubmit={handleJoinSubmit} className="p-5 space-y-4">
+              {submitMessage.text && (
+                <div className={`p-3 rounded-lg text-sm font-medium ${submitMessage.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                  {submitMessage.text}
+                </div>
+              )}
+              
+              <div>
+                <label className="block text-[13px] font-bold text-foreground/80 mb-1 drop-shadow-sm">Your Full Name <span className="text-church-red">*</span></label>
+                <input 
+                  required
+                  type="text"
+                  placeholder="e.g. John Doe"
+                  className="w-full px-3 py-2.5 bg-white/50 backdrop-blur-sm border border-white/60 rounded-xl focus:border-church-red focus:bg-white/90 focus:ring-2 focus:ring-church-red/20 outline-none transition-all placeholder:text-foreground/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] text-sm"
+                  value={joinForm.name}
+                  onChange={e => setJoinForm({...joinForm, name: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <label className="block text-[13px] font-bold text-foreground/80 mb-1 drop-shadow-sm">Phone Number <span className="text-church-red">*</span></label>
+                <input 
+                  required
+                  type="tel"
+                  placeholder="e.g. +1 (123) 456-7890"
+                  className="w-full px-3 py-2.5 bg-white/50 backdrop-blur-sm border border-white/60 rounded-xl focus:border-church-red focus:bg-white/90 focus:ring-2 focus:ring-church-red/20 outline-none transition-all placeholder:text-foreground/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] text-sm"
+                  value={joinForm.phone}
+                  onChange={e => setJoinForm({...joinForm, phone: e.target.value})}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-[13px] font-bold text-foreground/80 mb-1 drop-shadow-sm">Why do you want to join this ministry? <span className="text-church-red">*</span></label>
+                <textarea 
+                  required
+                  rows={2}
+                  placeholder="Tell us a bit about your passion or calling..."
+                  className="w-full px-3 py-2.5 bg-white/50 backdrop-blur-sm border border-white/60 rounded-xl focus:border-church-red focus:bg-white/90 focus:ring-2 focus:ring-church-red/20 outline-none transition-all resize-none placeholder:text-foreground/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] text-sm"
+                  value={joinForm.reason}
+                  onChange={e => setJoinForm({...joinForm, reason: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <label className="block text-[13px] font-bold text-foreground/80 mb-1 drop-shadow-sm">What is your main aim for joining? <span className="text-church-red">*</span></label>
+                <textarea 
+                  required
+                  rows={2}
+                  placeholder="e.g. To serve the community..."
+                  className="w-full px-3 py-2.5 bg-white/50 backdrop-blur-sm border border-white/60 rounded-xl focus:border-church-red focus:bg-white/90 focus:ring-2 focus:ring-church-red/20 outline-none transition-all resize-none placeholder:text-foreground/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] text-sm"
+                  value={joinForm.aim}
+                  onChange={e => setJoinForm({...joinForm, aim: e.target.value})}
+                />
+              </div>
+
+              <div className="pt-1">
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting || submitMessage.type === 'success'}
+                  className="w-full bg-church-red hover:bg-church-red/90 text-white py-5 text-[15px] font-bold rounded-xl shadow-lg shadow-church-red/20 transition-all active:scale-95"
+                >
+                  {isSubmitting ? 'Submitting...' : 'Submit Request'}
+                </Button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
       <Footer />
     </div>
   );

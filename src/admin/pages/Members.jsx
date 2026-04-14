@@ -182,7 +182,8 @@ export default function Members() {
           <div className="relative sm:min-w-[16rem]">
             <span className="material-symbols-outlined pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[20px] text-[#8d706c]">search</span>
             <input
-              className="w-full rounded-xl bg-[#f6f3f2] py-3 pl-12 pr-4 text-sm transition-all placeholder:text-[#8d706c] focus:bg-white focus:ring-2 focus:ring-[#9e2016]/25"
+              className="w-full rounded-xl bg-[#f6f3f2] py-3 pl-12 pr-4 text-sm transition-all placeholder:text-[#8d706c] focus:bg-white outline-none focus:outline-none focus:ring-0 shadow-none focus:shadow-none"
+              style={{boxShadow: 'none'}}
               placeholder="Search members..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -333,11 +334,11 @@ export default function Members() {
             <form className="space-y-4">
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-[#59413d]">Service Date</label>
-                <input className="w-full rounded-xl bg-[#f6f3f2] px-4 py-3" type="date" />
+                <input className="w-full rounded-xl bg-[#f6f3f2] px-4 py-3 outline-none focus:outline-none focus:ring-0 shadow-none focus:shadow-none" style={{boxShadow: 'none'}} type="date" />
               </div>
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-[#59413d]">Service Type</label>
-                <select className="w-full rounded-xl bg-[#f6f3f2] px-4 py-3">
+                <select className="w-full rounded-xl bg-[#f6f3f2] px-4 py-3 outline-none focus:outline-none focus:ring-0 shadow-none focus:shadow-none" style={{boxShadow: 'none'}}>
                   <option>Sunday Morning Service</option>
                   <option>Wednesday Bible Study</option>
                   <option>Friday Night Vigil</option>
@@ -347,7 +348,7 @@ export default function Members() {
               <div className="mt-6 bg-[#fcf9f8] pt-4">
                 <h4 className="mb-4 text-sm font-bold">Live Check-in List</h4>
                 <div className="max-h-[300px] overflow-y-auto pr-2 space-y-3 scrollbar-hide">
-                  {members.map((m) => (
+                  {visibleMembers.map((m) => (
                     <div key={m.email} className="flex items-center justify-between rounded-xl bg-[#f6f3f2]/50 p-3 hover:bg-[#f6f3f2] transition-colors">
                       <div className="flex items-center gap-3">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-[10px] font-bold shadow-sm">{m.initials}</div>
@@ -361,7 +362,7 @@ export default function Members() {
                       />
                     </div>
                   ))}
-                  {members.length === 0 && (
+                  {visibleMembers.length === 0 && (
                     <div className="bg-[#f6f3f2]/30 rounded-xl p-8 text-center text-[#8d706c] text-sm">
                       No members to show.
                     </div>

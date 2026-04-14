@@ -13,6 +13,7 @@ export default function Prayer() {
   });
 
   const [rows, setRows] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchRequests();
@@ -118,6 +119,13 @@ export default function Prayer() {
     prayed: rows.filter((r) => r.status === 'Prayed For').length,
     testimonies: rows.filter((r) => r.status === 'Testimony').length,
   };
+
+  const filteredRows = rows.filter(r => 
+    r.submitter.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    r.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    r.content.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <>
       <main className="mx-auto max-w-7xl px-4 pb-20 pt-8 md:px-12">
@@ -179,9 +187,12 @@ export default function Prayer() {
             <div className="relative max-w-md flex-1">
               <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#59413d]">search</span>
               <input
-                className="w-full rounded-2xl bg-white py-3 pl-12 pr-4 text-sm transition-all focus:ring-2 focus:ring-[#9e2016]/20"
+                className="w-full rounded-2xl bg-white py-3 pl-12 pr-4 text-sm transition-all outline-none focus:outline-none focus:ring-0 shadow-none focus:shadow-none"
+                style={{boxShadow: 'none'}}
                 placeholder="Search by name or keyword..."
                 type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <div className="flex items-center gap-2">
@@ -208,7 +219,7 @@ export default function Prayer() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#e1bfb9]/10">
-                {rows.map((row) => (
+                {filteredRows.map((row) => (
                   <tr key={row.id} className="group transition-all hover:bg-white">
                     <td className="px-8 py-6">
                       <div className="max-w-md">

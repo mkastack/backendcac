@@ -131,13 +131,15 @@ export default function ContactPage() {
                     <h4 className="font-semibold text-foreground uppercase text-xs tracking-wider">Follow Us</h4>
                     <div className="flex gap-4">
                       {[
-                        { icon: Facebook, label: "Facebook" },
-                        { icon: Youtube, label: "YouTube" },
-                        { icon: Instagram, label: "Instagram" },
+                        { icon: Facebook, label: "Facebook", url: "https://web.facebook.com/profile.php?id=61566892619889" },
+                        { icon: Youtube, label: "YouTube", url: "https://youtube.com/@cacint_bubiashiecentral?si=pdtWhcEe55Rt3HjI" },
+                        { icon: Instagram, label: "Instagram", url: "https://www.instagram.com/cacint_bubiashiecentral?igsh=YnNnOW9tajl5dWg3" },
                       ].map((social) => (
                         <a
                           key={social.label}
-                          href="#"
+                          href={social.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="w-10 h-10 rounded-full bg-muted text-foreground flex items-center justify-center hover:bg-church-gold hover:text-white transition-all duration-300 shadow-sm"
                           aria-label={social.label}
                         >
@@ -253,11 +255,28 @@ export default function ContactPage() {
                 )}
               </motion.div>
             </div>
-                 {/* Map Placeholder */}
-                <div className="mt-10 bg-church-light-blue rounded-2xl h-64 flex items-center justify-center">
-                  <div className="text-center">
-                    <MapPin className="w-12 h-20 text-church-red mx-auto mb-3" />
-                    <p className="text-muted-foreground">Interactive map coming soon</p>
+                 {/* Map Embed */}
+                <div className="mt-10 rounded-2xl overflow-hidden shadow-lg border border-border h-72 w-full">
+                  <iframe
+                    src="https://maps.google.com/maps?q=Christ+Apostolic+Church+Bubiashie+Central+Accra+Ghana&output=embed&z=16"
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    title="CAC Bubiashie Central Location"
+                  />
+                  <div className="bg-church-light-blue px-4 py-2 flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground font-medium">CAC International, Bubiashie Central — Accra, Ghana</span>
+                    <a
+                      href="https://maps.app.goo.gl/B6mkb6Tn4fRpaKdj7"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-bold text-church-red hover:underline flex items-center gap-1"
+                    >
+                      <MapPin className="w-3 h-3" /> Open in Google Maps
+                    </a>
                   </div>
                 </div>
 

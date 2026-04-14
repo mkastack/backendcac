@@ -3,7 +3,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Calendar, MapPin, Clock, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import heroImage from "@/assets/hero-church.jpg";
+import heroImage from "@/assets/615301614_122200877756563087_4673069262446705519_n.jpg";
 import { supabase } from "@/lib/supabase";
 import { useState, useEffect } from "react";
 

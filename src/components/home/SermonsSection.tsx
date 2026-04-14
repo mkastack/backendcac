@@ -1,10 +1,12 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Play, BookOpen, Clock, User, Mic } from "lucide-react";
+import { Play, Clock, User, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/lib/supabase";
 import Image from "@/assets/image.jpg"
 
-const latestSermons = [
+const fallbackSermons = [
   {
     id: 1,
     title: "Solid Foundation 2026 – Day 25",
@@ -38,6 +40,45 @@ const latestSermons = [
 ];
 
 export function SermonsSection() {
+  const [latestSermons, setLatestSermons] = useState<any[]>(fallbackSermons);
+
+  useEffect(() => {
+    const fetchLatestSermons = async () => {
+      const { data, error } = await supabase
+        .from('sermons')
+        .select('*')
+        .not('video_url', 'is', null)
+        .order('date', { ascending: false })
+        .limit(3);
+
+      if (!error && data?.length) {
+        setLatestSermons(data.map((sermon) => ({
+          id: sermon.id,
+          title: sermon.title,
+          preacher: sermon.speaker,
+          date: sermon.date ? new Date(sermon.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recently',
+          duration: sermon.duration || 'Sermon',
+          type: 'video',
+          thumbnail: sermon.thumbnail_url || Image,
+          videoUrl: sermon.video_url,
+        })));
+      }
+    };
+
+    fetchLatestSermons();
+
+    const channel = supabase
+      .channel('home_latest_sermons_sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sermons' }, () => {
+        fetchLatestSermons();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   return (
     <section className="py-20 lg:py-28 bg-background">
       <div className="container mx-auto px-6">

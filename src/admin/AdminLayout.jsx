@@ -10,6 +10,7 @@ import Donations from './pages/Donations';
 import Blog from './pages/Blog';
 import Prayer from './pages/Prayer';
 import Ministries from './pages/Ministries';
+import Leadership from './pages/Leadership';
 
 function Shell() {
   const location = useLocation();
@@ -28,6 +29,7 @@ function Shell() {
         <Route path="donations" element={<Donations />} />
         <Route path="blog" element={<Blog />} />
         <Route path="prayer" element={<Prayer />} />
+        <Route path="leadership" element={<Leadership />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
     </div>

@@ -4,10 +4,13 @@ import { uploadChurchAsset } from '../../lib/storage';
 
 export default function Ministries() {
   const [activeTab, setActiveTab] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [registerOpen, setRegisterOpen] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [rows, setRows] = useState([]);
+  const [joinRequests, setJoinRequests] = useState([]);
+  const [requestsOpen, setRequestsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState({
@@ -15,7 +18,8 @@ export default function Ministries() {
     leader: '',
     description: '',
     icon: 'groups',
-    image_url: ''
+    image_url: '',
+    activities: []
   });
 
   useEffect(() => {
@@ -25,6 +29,9 @@ export default function Ministries() {
       .channel('admin_ministries_sync')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'ministries' }, () => {
         fetchMinistries();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ministry_join_requests' }, () => {
+        fetchJoinRequests();
       })
       .subscribe();
 
@@ -53,6 +60,21 @@ export default function Ministries() {
     setLoading(false);
   };
 
+  const fetchJoinRequests = async () => {
+    const { data, error } = await supabase
+      .from('ministry_join_requests')
+      .select('*, ministries(name)')
+      .order('created_at', { ascending: false });
+    
+    if (!error && data) {
+      setJoinRequests(data);
+    }
+  };
+
+  useEffect(() => {
+    fetchJoinRequests();
+  }, []);
+
   const handleSave = async (e) => {
     e.preventDefault();
     if (!form.name || !form.leader) return;
@@ -63,6 +85,7 @@ export default function Ministries() {
       description: form.description,
       icon: form.icon,
       image_url: form.image_url,
+      activities: form.activities,
       member_count: editingId ? (rows.find(r => r.id === editingId)?.members || 0) : 0
     };
 
@@ -98,6 +121,7 @@ export default function Ministries() {
       description: '',
       icon: 'groups',
       image_url: '',
+      activities: []
     });
   };
 
@@ -109,6 +133,7 @@ export default function Ministries() {
       description: m.description,
       icon: m.icon,
       image_url: m.image_url || '',
+      activities: m.activities || []
     });
     setRegisterOpen(true);
     setMenuOpenId(null);
@@ -120,7 +145,39 @@ export default function Ministries() {
     setMenuOpenId(null);
   };
 
-  const ministries = rows;
+  const updateRequestStatus = async (req, newStatus) => {
+    const { error } = await supabase
+      .from('ministry_join_requests')
+      .update({ status: newStatus })
+      .eq('id', req.id);
+
+    if (!error) {
+      if (newStatus === 'Joined' && req.status !== 'Joined') {
+        const ministry = rows.find(m => m.id === req.ministry_id);
+        if (ministry) {
+          await supabase.from('ministries').update({ member_count: (ministry.members || 0) + 1 }).eq('id', req.ministry_id);
+        }
+      } else if (req.status === 'Joined' && newStatus !== 'Joined') {
+        const ministry = rows.find(m => m.id === req.ministry_id);
+        if (ministry && (ministry.members || 0) > 0) {
+          await supabase.from('ministries').update({ member_count: ministry.members - 1 }).eq('id', req.ministry_id);
+        }
+      }
+      fetchJoinRequests();
+    }
+  };
+
+  const handleDeleteRequest = async (id) => {
+    if (window.confirm("Are you sure you want to permanently delete this join request?")) {
+      const { error } = await supabase.from('ministry_join_requests').delete().eq('id', id);
+      if (!error) fetchJoinRequests();
+    }
+  };
+
+  const ministries = rows.filter(m => 
+    m.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    m.leader.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <main className="pb-12 px-4 sm:px-8 max-w-screen-2xl mx-auto">
@@ -135,16 +192,30 @@ export default function Ministries() {
           <h1 className="text-4xl font-extrabold tracking-tight text-[#1c1b1b] mb-2 font-headline">Ministry Governance</h1>
           <p className="text-[#5e5e5e] body-md font-body max-w-xl">Oversee the various departments of our sanctuary, track engagement, and support ministry leaders in their spiritual mission.</p>
         </div>
-        <button 
-          onClick={() => {
-            setEditingId(null);
-            setRegisterOpen(true);
-          }}
-          className="flex items-center gap-2 bg-[#9e2016] text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:opacity-90 transition-opacity"
-        >
-          <span className="material-symbols-outlined">add_circle</span>
-          Register Ministry
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setRequestsOpen(true)}
+            className="flex items-center gap-2 bg-white text-[#1c1b1b] px-6 py-3 rounded-xl font-bold shadow-sm border border-neutral-200 hover:bg-neutral-50 transition-colors relative"
+          >
+            <span className="material-symbols-outlined">inbox</span>
+            Join Requests
+            {joinRequests.filter(r => r.status === 'Pending').length > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full">
+                {joinRequests.filter(r => r.status === 'Pending').length}
+              </span>
+            )}
+          </button>
+          <button 
+            onClick={() => {
+              setEditingId(null);
+              setRegisterOpen(true);
+            }}
+            className="flex items-center gap-2 bg-[#9e2016] text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:opacity-90 transition-opacity"
+          >
+            <span className="material-symbols-outlined">add_circle</span>
+            Register Ministry
+          </button>
+        </div>
       </header>
 
       {/* Stats Section */}
@@ -209,7 +280,14 @@ export default function Ministries() {
           <div className="flex items-center gap-3">
             <div className="bg-neutral-50 rounded-xl px-4 py-2 flex items-center gap-2 border border-transparent focus-within:border-[#9e2016]/20 transition-all">
               <span className="material-symbols-outlined text-[#5e5e5e] text-lg">search</span>
-              <input type="text" placeholder="Search ministries..." className="bg-transparent border-none p-0 text-sm focus:ring-0 w-48" />
+              <input 
+                type="text" 
+                placeholder="Search ministries..." 
+                className="bg-transparent border-none outline-none focus:outline-none focus:ring-0 shadow-none focus:shadow-none p-0 text-sm w-48"
+                style={{boxShadow: 'none'}}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
           </div>
         </div>
@@ -256,7 +334,25 @@ export default function Ministries() {
                 </div>
               </div>
               <h3 className="text-xl font-bold text-[#1c1b1b] mb-1 font-headline">{m.name}</h3>
-              <p className="text-[#5e5e5e] text-sm mb-6 line-clamp-2 font-body leading-relaxed">{m.description}</p>
+              <p className="text-[#5e5e5e] text-sm mb-4 line-clamp-2 font-body leading-relaxed">{m.description}</p>
+              
+              {m.activities && m.activities.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-xs font-bold text-[#5e5e5e] uppercase tracking-wider mb-2">Key Activities</p>
+                  <div className="flex flex-wrap gap-1">
+                    {m.activities.slice(0, 2).map((activity, index) => (
+                      <span key={index} className="text-xs bg-neutral-100 text-neutral-700 px-2 py-1 rounded font-medium">
+                        {activity}
+                      </span>
+                    ))}
+                    {m.activities.length > 2 && (
+                      <span className="text-xs bg-neutral-100 text-neutral-700 px-2 py-1 rounded font-medium">
+                        +{m.activities.length - 2} more
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
               
               <div className="space-y-4 pt-4 border-t border-neutral-100">
                 <div className="flex justify-between items-center text-sm">
@@ -383,6 +479,45 @@ export default function Ministries() {
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                   />
                 </div>
+                {/* Key Activities */}
+                <div className="space-y-2 md:col-span-2">
+                  <label className="ml-1 text-sm font-bold uppercase tracking-wider text-[#5e5e5e]">Key Activities & Services</label>
+                  <div className="space-y-2">
+                    {form.activities.map((activity, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          className="flex-1 rounded-lg border-none bg-neutral-50 px-3 py-2 text-sm transition-all focus:bg-white focus:ring-2 focus:ring-[#9e2016]/20"
+                          value={activity}
+                          onChange={(e) => {
+                            const newActivities = [...form.activities];
+                            newActivities[index] = e.target.value;
+                            setForm({ ...form, activities: newActivities });
+                          }}
+                          placeholder="e.g. Lead Sunday Worship Services"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newActivities = form.activities.filter((_, i) => i !== index);
+                            setForm({ ...form, activities: newActivities });
+                          }}
+                          className="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 flex items-center justify-center transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-sm">remove</span>
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, activities: [...form.activities, ''] })}
+                      className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[#9e2016] hover:bg-[#9e2016]/5 rounded-lg transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-lg">add</span>
+                      Add Activity
+                    </button>
+                  </div>
+                </div>
               </form>
             </div>
             {/* Modal Footer */}
@@ -397,6 +532,89 @@ export default function Ministries() {
               <button className="px-8 py-4 font-bold text-[#5e5e5e] transition-colors hover:text-[#1c1b1b]" onClick={closeModal} type="button">
                 Cancel
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Join Requests Modal */}
+      {requestsOpen && (
+        <div className="fixed inset-0 z-[100] flex justify-end bg-black/60 p-4 backdrop-blur-sm sm:p-0">
+          <div className="w-full max-w-lg h-full bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 sm:rounded-l-3xl overflow-hidden">
+            <div className="flex items-center justify-between border-b border-neutral-100 px-6 py-6 bg-[#fcf9f8]">
+              <div>
+                <h2 className="text-2xl font-extrabold tracking-tight text-[#1c1b1b]">Join Requests</h2>
+                <p className="text-sm text-[#5e5e5e] mt-1">People interested in joining a ministry</p>
+              </div>
+              <button className="rounded-full p-2 hover:bg-neutral-200 transition-colors" onClick={() => setRequestsOpen(false)}>
+                <span className="material-symbols-outlined text-[#5e5e5e]">close</span>
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-neutral-50/50">
+              {joinRequests.length === 0 ? (
+                <div className="text-center py-10 text-[#8d706c]">
+                  <span className="material-symbols-outlined text-4xl mb-2 opacity-50">inbox</span>
+                  <p className="font-medium">No join requests yet.</p>
+                </div>
+              ) : (
+                joinRequests.map(req => (
+                  <div key={req.id} className="bg-white rounded-2xl p-5 shadow-sm border border-neutral-100">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h4 className="font-bold text-[#1c1b1b] text-lg">{req.name}</h4>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="inline-flex items-center gap-1 text-xs font-bold text-[#9e2016] bg-[#9e2016]/5 px-2 py-1 rounded-full">
+                            <span className="material-symbols-outlined text-[14px]">church</span>
+                            {req.ministries?.name || 'Unknown Ministry'}
+                          </span>
+                          <span className="inline-flex items-center gap-1 text-xs font-bold text-[#5e5e5e] bg-neutral-100 px-2 py-1 rounded-full">
+                            <span className="material-symbols-outlined text-[14px]">call</span>
+                            {req.phone || 'No phone provided'}
+                          </span>
+                        </div>
+                      </div>
+                      <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-full ${
+                        req.status === 'Pending' ? 'bg-orange-100 text-orange-700' :
+                        req.status === 'Contacted' ? 'bg-blue-100 text-blue-700' :
+                        'bg-green-100 text-green-700'
+                      }`}>
+                        {req.status}
+                      </span>
+                    </div>
+
+                    <div className="space-y-3 mb-4 text-sm mt-4">
+                      <div>
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-[#8d706c] mb-1">Reason for joining</p>
+                        <p className="text-[#1c1b1b] bg-neutral-50 p-3 rounded-xl">{req.reason}</p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-[#8d706c] mb-1">Main Aim</p>
+                        <p className="text-[#1c1b1b] bg-neutral-50 p-3 rounded-xl">{req.aim}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 border-t border-neutral-100 pt-4 mt-2">
+                      <select 
+                        className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-sm font-semibold text-[#5e5e5e] focus:outline-none focus:border-[#9e2016]"
+                        value={req.status}
+                        onChange={(e) => updateRequestStatus(req, e.target.value)}
+                      >
+                        <option value="Pending">Mark as Pending</option>
+                        <option value="Contacted">Mark as Contacted</option>
+                        <option value="Joined">Mark as Joined</option>
+                      </select>
+                      <button 
+                        onClick={() => handleDeleteRequest(req.id)}
+                        className="flex-shrink-0 bg-red-50 text-red-600 px-3 py-2 rounded-xl border border-red-100 hover:bg-red-100 transition-colors flex items-center justify-center"
+                        title="Delete Request"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

@@ -71,6 +71,7 @@ create table if not exists blog_posts (
   title text not null,
   content text,
   author text,
+  category text, -- e.g. Inspiration, Youth Ministry, Church News, Family Life, Testimony
   status text default 'Draft', -- Draft, Published
   published_at timestamp with time zone,
   image_url text,
@@ -86,6 +87,42 @@ create table if not exists ministries (
   image_url text,
   member_count integer default 0,
   icon text,
+  activities text[], -- Array of key activities/services
+  created_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+-- Leaders Table (used on the About page "Meet Our Leaders" section)
+create table if not exists leaders (
+  id uuid default gen_random_uuid() primary key,
+  name text not null,
+  role text not null,
+  bio text,
+  image_url text,
+  display_order integer default 0,
+  created_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+-- Ministry Join Requests Table
+create table if not exists ministry_join_requests (
+  id uuid default gen_random_uuid() primary key,
+  ministry_id uuid references ministries(id) on delete cascade,
+  name text not null,
+  phone text not null,
+  reason text not null,
+  aim text not null,
+  status text default 'Pending', -- Pending, Contacted, Joined
+  created_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+-- WhatsApp Notifications Table
+create table if not exists whatsapp_notifications (
+  id uuid default gen_random_uuid() primary key,
+  ministry_name text not null,
+  recipient_number text not null,
+  message text not null,
+  whatsapp_url text not null,
+  status text default 'pending', -- pending, sent, failed
+  sent_at timestamp with time zone,
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
@@ -101,18 +138,40 @@ alter table events enable row level security;
 alter table prayer_requests enable row level security;
 alter table donations enable row level security;
 alter table blog_posts enable row level security;
-alter table ministries enable row level security;
+alter table ministry_join_requests enable row level security;
+alter table leaders enable row level security;
+alter table whatsapp_notifications enable row level security;
 
 -- Policies
+drop policy if exists "Allow all for everyone" on members;
 create policy "Allow all for everyone" on members for all using (true) with check (true);
+
+drop policy if exists "Allow all for everyone" on sermons;
 create policy "Allow all for everyone" on sermons for all using (true) with check (true);
+
+drop policy if exists "Allow all for everyone" on events;
 create policy "Allow all for everyone" on events for all using (true) with check (true);
+
+drop policy if exists "Allow all for everyone" on prayer_requests;
 create policy "Allow all for everyone" on prayer_requests for all using (true) with check (true);
+
+drop policy if exists "Allow all for everyone" on donations;
 create policy "Allow all for everyone" on donations for all using (true) with check (true);
+
+drop policy if exists "Allow all for everyone" on blog_posts;
 create policy "Allow all for everyone" on blog_posts for all using (true) with check (true);
-create policy "Allow all for everyone" on ministries for all using (true) with check (true);
+
+drop policy if exists "Allow all for everyone" on ministry_join_requests;
+create policy "Allow all for everyone" on ministry_join_requests for all using (true) with check (true);
+
+drop policy if exists "Allow all for everyone" on leaders;
+create policy "Allow all for everyone" on leaders for all using (true) with check (true);
+
+drop policy if exists "Allow all for everyone" on whatsapp_notifications;
+create policy "Allow all for everyone" on whatsapp_notifications for all using (true) with check (true);
 
 -- Storage Policies
+drop policy if exists "Manage Library Images" on storage.objects;
 create policy "Manage Library Images" on storage.objects for all using (bucket_id = 'church-assets') with check (bucket_id = 'church-assets');
 
 -- Enable Realtime at the end
@@ -122,13 +181,10 @@ begin;
   create publication supabase_realtime;
 commit;
 
-alter publication supabase_realtime add table prayer_requests;
-alter publication supabase_realtime add table sermons;
-alter publication supabase_realtime add table events;
-alter publication supabase_realtime add table members;
-alter publication supabase_realtime add table donations;
-alter publication supabase_realtime add table blog_posts;
 alter publication supabase_realtime add table ministries;
+alter publication supabase_realtime add table leaders;
+alter publication supabase_realtime add table ministry_join_requests;
+alter publication supabase_realtime add table whatsapp_notifications;
 
 -- Instructions for creating the admin user:
 -- Use the Supabase Dashboard under Authentication > Users > Add User

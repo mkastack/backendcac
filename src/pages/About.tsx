@@ -1,18 +1,10 @@
 import { motion, useMotionValue, useTransform, animate, useInView } from "framer-motion";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { Users, Target, Heart, BookOpen, Church, Flame, Globe, Star } from "lucide-react";
+import { Users, Target, Heart, BookOpen, Church, Flame, Globe, Star, Eye } from "lucide-react";
 import heroImage from "@/assets/516146505_122170451588563087_8088452427971609050_n.jpg";
-import Image from "@/assets/8.jpeg"
-import pastorImage from "@/assets/_MG_5561.jpg"
-import associatePastorImage from "@/assets/_MG_5567.jpg"
-import deaconAsanteImage from "@/assets/13.jpg"
-import revSethImage from "@/assets/653095672_122209342274563087_5467309530285769182_n.jpg"
-import elderNewloveImage from "@/assets/15.jpg"
-import emmanuelImage from "@/assets/14.jpg"
-
-
+import { supabase } from "@/lib/supabase";
 
 
 
@@ -47,51 +39,7 @@ const historyMilestones = [
   },
 ];
 
-const leaders = [
-  {
-    name: "Pastor James Mensah",
-    role: "General Overseer",
-    image: pastorImage,
-  },
-  {
-    name: "Elder Grace Owusu",
-    role: "Associate Pastor",
-    image: associatePastorImage,
-  },
-  {
-    name: "Deacon Samuel Asante",
-    role: "Church Administrator",
-    image: deaconAsanteImage,
-  },
-  {
-    name: "REV SETH FRIMPONG",
-    role: "General Overseer/Head Pastor",
-    image: revSethImage,
-  },
-  {
-    name: "Elder John Appiah",
-    role: "Youth Pastor",
-    image: Image,
-  },
-  {
-    name: "Deaconess Sarah Osei",
-    role: "Children's Ministry",
-    image: Image,
-  },
-  {
-    name: "Emmanuel Mensah",
-    role: "Music Director",
-    image: emmanuelImage,
-  },
-  {
-    name: "ELDER NEWLOVE OHENE",
-    role: "PRESIDING ELDER",
-    image: elderNewloveImage,
-  },
-];
 
-// Duplicate the array for infinite scrolling effect
-const slidingLeaders = [...leaders, ...leaders];
 
 const beliefs = [
   "We believe in one God, eternally existent in three persons: Father, Son, and Holy Spirit.",
@@ -121,7 +69,41 @@ function Counter({ value, suffix = "" }: { value: number; suffix?: string }) {
   );
 }
 
+function getInitials(name: string) {
+  return name
+    .split(' ')
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() || '')
+    .join('');
+}
+
 export default function AboutPage() {
+  const [leaders, setLeaders] = useState<{ id: string; name: string; role: string; image_url?: string }[]>([]);
+
+  useEffect(() => {
+    const fetchLeaders = async () => {
+      const { data } = await supabase
+        .from('leaders')
+        .select('id, name, role, image_url')
+        .order('display_order', { ascending: true });
+      if (data && data.length > 0) setLeaders(data);
+    };
+    fetchLeaders();
+
+    // Subscribe to real-time updates
+    const channel = supabase
+      .channel('about_leaders_live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'leaders' }, fetchLeaders)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Duplicate the array for infinite scrolling
+  const slidingLeaders = [...leaders, ...leaders];
+
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -169,13 +151,18 @@ export default function AboutPage() {
               <span className="inline-block px-4 py-1.5 bg-gradient-red text-white rounded-full text-sm font-medium mb-4">
                 Our Story
               </span>
-              <h2 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-3">
+              <h2 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-4">
                 Our History
               </h2>
-              <p className="text-muted-foreground max-w-xl mx-auto text-sm leading-relaxed">
-                From a small gathering of faithful believers to a thriving community — this is the story 
-                of God's faithfulness through the years at CAC Bubiashie Central.
-              </p>
+              <div className="text-muted-foreground max-w-2xl mx-auto text-[15px] leading-relaxed space-y-4 text-center">
+                <p>
+                  Christ Apostolic Church Bubiashie Central is a Spirit-filled Pentecostal congregation in the heart of Accra, Ghana — established in the 1990s as a spiritual lighthouse where the broken find wholeness, the lost find direction, and every soul is fed with the living Word of God.
+                </p>
+                <p className="pt-3 italic font-serif text-[15px] text-church-red/90 font-semibold">
+                  "For the gifts and calling of God are without repentance." <br />
+                  <span className="text-muted-foreground text-sm not-italic mt-1 block">— Romans 11:29</span>
+                </p>
+              </div>
             </motion.div>
 
             {/* Stats Grid — top */}
@@ -277,13 +264,17 @@ export default function AboutPage() {
                 className="group bg-card rounded-2xl p-8 border border-border shadow-[0_3px_10px_rgba(0,0,0,0.08)] hover:!shadow-[0_20px_40px_rgba(0,0,0,0.1)] hover:!-translate-y-[3px] hover:scale-[1.005] transition-all duration-300"
               >
                 <div className="w-14 h-14 rounded-xl bg-church-gold/10 flex items-center justify-center mb-5 transition-all duration-300 group-hover:scale-105 group-hover:-translate-y-0.5 group-hover:bg-church-gold/20">
-                  <Target className="w-7 h-7 text-church-red" />
+                  <Eye className="w-7 h-7 text-church-red" />
                 </div>
                 <h3 className="font-serif text-2xl font-bold text-foreground mb-4">Our Vision</h3>
-                <p className="text-muted-foreground text-justify">
-                  To be a Spirit-filled, Christ-centered community that transforms lives, 
-                  builds strong families, and impacts nations with the Gospel of Jesus Christ.
-                </p>
+                <div className="text-muted-foreground text-justify space-y-4 leading-relaxed text-sm">
+                  <p>
+                    "To see a world transformed by the power of the living God where every nation, tribe, and tongue bows in worship before Jesus Christ, and His glory fills the earth as the waters cover the sea."
+                  </p>
+                  <p>
+                    We envision a Church that stands as a blazing light in the darkest corners of the world — a people so consumed by the fire of the Holy Spirit that their very presence brings healing, hope, and the undeniable reality of God's Kingdom on earth.
+                  </p>
+                </div>
               </motion.div>
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -293,13 +284,17 @@ export default function AboutPage() {
                 className="group bg-card rounded-2xl p-8 border border-border shadow-[0_3px_10px_rgba(0,0,0,0.08)] hover:!shadow-[0_20px_40px_rgba(0,0,0,0.1)] hover:!-translate-y-[3px] hover:scale-[1.005] transition-all duration-300"
               >
                 <div className="w-14 h-14 rounded-xl bg-church-gold/10 flex items-center justify-center mb-5 transition-all duration-300 group-hover:scale-105 group-hover:-translate-y-0.5 group-hover:bg-church-gold/20">
-                  <Heart className="w-7 h-7 text-church-red" />
+                  <Globe className="w-7 h-7 text-church-red" />
                 </div>
                 <h3 className="font-serif text-2xl font-bold text-foreground mb-4">Our Mission</h3>
-                <p className="text-muted-foreground text-justify">
-                  To worship God, win souls, disciple believers, and demonstrate the love of 
-                  Christ through service to our community and beyond.
-                </p>
+                <div className="text-muted-foreground text-justify space-y-4 leading-relaxed text-sm">
+                  <p>
+                    "Empowered by the Holy Spirit, we exist to preach the uncompromising Word of God, raise disciples of Jesus Christ, and demonstrate the supernatural power of God to a broken and searching world until every soul finds its home in the arms of the Father."
+                  </p>
+                  <p>
+                    We are called to worship with abandon, win the lost with urgency, water believers with the Word, and send laborers into the harvest — building a Church that Heaven is proud of and that hell trembles before.
+                  </p>
+                </div>
               </motion.div>
             </div>
           </div>
@@ -349,29 +344,41 @@ export default function AboutPage() {
             </motion.div>
 
             <div className="relative overflow-hidden w-full py-4 -mx-4 px-4">
-              <div className="flex gap-8 w-max animate-scroll hover:[animation-play-state:paused]">
-                {slidingLeaders.map((leader, index) => (
-                  <div
-                    key={`${leader.name}-${index}`}
-                    className="group bg-card rounded-2xl overflow-hidden border border-border/50 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-500 text-center w-[280px] shrink-0"
-                  >
-                    <div className="aspect-square overflow-hidden relative">
-                      <img
-                        src={leader.image}
-                        alt={leader.name}
-                        className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700 ease-in-out"
-                      />
-                      <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              {leaders.length === 0 ? (
+                <div className="flex justify-center py-12">
+                  <p className="text-muted-foreground text-sm">Loading leadership team...</p>
+                </div>
+              ) : (
+                <div className="flex gap-8 w-max animate-scroll hover:[animation-play-state:paused]">
+                  {slidingLeaders.map((leader, index) => (
+                    <div
+                      key={`${leader.id}-${index}`}
+                      className="group bg-card rounded-2xl overflow-hidden border border-border/50 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-500 text-center w-[280px] shrink-0"
+                    >
+                      <div className="aspect-square overflow-hidden relative">
+                        {leader.image_url ? (
+                          <img
+                            src={leader.image_url}
+                            alt={leader.name}
+                            className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-700 ease-in-out"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-[#ffdad5] text-[#9e2016] text-5xl font-extrabold">
+                            {getInitials(leader.name)}
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                      </div>
+                      <div className="p-5">
+                        <h3 className="font-serif font-semibold text-lg text-foreground whitespace-normal">
+                          {leader.name}
+                        </h3>
+                        <p className="text-church-red text-sm">{leader.role}</p>
+                      </div>
                     </div>
-                    <div className="p-5">
-                      <h3 className="font-serif font-semibold text-lg text-foreground whitespace-normal">
-                        {leader.name}
-                      </h3>
-                      <p className="text-church-red text-sm">{leader.role}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </section>

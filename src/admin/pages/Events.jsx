@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { uploadChurchAsset } from '../../lib/storage';
 
@@ -46,15 +46,19 @@ export default function Events() {
 
   const [memberStats, setMemberStats] = useState({
     total: 0,
-    visitors: 0
+    visitors: 0,
+    activeRate: 0
   });
 
   const fetchMemberStats = async () => {
-    const { data: mData } = await supabase.from('members').select('category');
-    if (mData) {
+    const { data: mData } = await supabase.from('members').select('category, status');
+    if (mData && mData.length > 0) {
+      const activeCount = mData.filter(m => m.status === 'Active' || !m.status).length;
+      const rate = Math.round((activeCount / mData.length) * 100);
       setMemberStats({
         total: mData.length,
-        visitors: mData.filter(m => m.category === 'Visitor').length
+        visitors: mData.filter(m => m.category === 'Visitor').length,
+        activeRate: rate
       });
     }
   };
@@ -88,6 +92,44 @@ export default function Events() {
       setIsModalOpen(false);
       setForm({ title: '', date: '', time: '', location: '', description: '', category: 'General', image_url: '' });
     }
+  };
+
+  const fileInputRef = useRef(null);
+
+  const handleMediaUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setNotice('Uploading event media...');
+    try {
+      await uploadChurchAsset('events', file);
+      setNotice('Event media uploaded successfully!');
+    } catch (err) {
+      setNotice('Failed to upload media: ' + err.message);
+    }
+  };
+
+  const handleExportAttendance = async () => {
+    setNotice('Generating attendance export...');
+    const { data: members, error } = await supabase.from('members').select('*');
+    if (error || !members) {
+      setNotice('Failed to export attendance.');
+      return;
+    }
+    
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Name,Email,Phone,Category,Status\n";
+    members.forEach(member => {
+      csvContent += `"${member.name}","${member.email || ''}","${member.phone || ''}","${member.category}","${member.status || 'Active'}"\n`;
+    });
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `church_attendance_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setNotice('Attendance exported successfully.');
   };
 
   return (
@@ -158,11 +200,11 @@ export default function Events() {
           <div>
             <h3 className="text-[#5e5e5e] text-sm mb-1 font-medium font-body">Attendance Rate</h3>
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-extrabold text-[#1c1b1b] tracking-tighter font-headline">{memberStats.total > 0 ? '82%' : '0%'}</span>
+              <span className="text-4xl font-extrabold text-[#1c1b1b] tracking-tighter font-headline">{memberStats.activeRate}%</span>
               <span className="text-sm text-[#5e5e5e]">avg. weekly</span>
             </div>
             <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
-              <div className="h-full bg-orange-500 transition-all duration-500" style={{ width: memberStats.total > 0 ? '82%' : '0%' }} />
+              <div className="h-full bg-orange-500 transition-all duration-500" style={{ width: `${memberStats.activeRate}%` }} />
             </div>
           </div>
         </div>
@@ -256,11 +298,12 @@ export default function Events() {
                   Create New Event
                   <span className="material-symbols-outlined">add_circle</span>
                 </button>
-                <button className="w-full bg-white/10 hover:bg-white/20 transition-colors py-3 px-4 rounded-xl flex items-center justify-between text-sm font-bold">
+                <input type="file" ref={fileInputRef} className="hidden" onChange={handleMediaUpload} />
+                <button onClick={() => fileInputRef.current?.click()} className="w-full bg-white/10 hover:bg-white/20 transition-colors py-3 px-4 rounded-xl flex items-center justify-between text-sm font-bold">
                   Upload Event Media
                   <span className="material-symbols-outlined">cloud_upload</span>
                 </button>
-                <button className="w-full bg-white text-[#9e2016] py-3 px-4 rounded-xl flex items-center justify-between text-sm font-extrabold shadow-sm">
+                <button onClick={handleExportAttendance} className="w-full bg-white text-[#9e2016] py-3 px-4 rounded-xl flex items-center justify-between text-sm font-extrabold shadow-sm hover:bg-neutral-50 transition-colors">
                   Export Attendance
                   <span className="material-symbols-outlined">download_2</span>
                 </button>

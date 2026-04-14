@@ -5,10 +5,11 @@ import { supabase } from '../../lib/supabase';
 
 const links = [
   ['Home', '/admin/dashboard'],
-  ['About', '/admin/members'],
+  ['Members', '/admin/members'],
   ['Sermons', '/admin/sermons'],
   ['Events', '/admin/events'],
   ['Ministries', '/admin/ministries'],
+  ['Leadership', '/admin/leadership'],
   ['Prayer', '/admin/prayer'],
   ['Blog', '/admin/blog'],
   ['Give', '/admin/donations'],

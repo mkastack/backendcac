@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
-import { Play, BookOpen, Calendar, MapPin } from "lucide-react";
+import { Play, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-church.jpg";
-import { useSmoothScroll } from "@/hooks/use-smooth-scroll";
 
 const bibleVerses = [
   {
@@ -27,15 +25,12 @@ const bibleVerses = [
 
 export function HeroSection() {
   const [currentVerse, setCurrentVerse] = useState(0);
-  const { scrollToSection } = useSmoothScroll();
-
-    const handleWatchLive = () => {
+  const handleWatchLive = () => {
     window.open("https://www.youtube.com/@cacint_bubiashiecentral", "_blank");
   };
 
-  const handleVisitUs = (e: React.MouseEvent) => {
-    e.preventDefault();
-    scrollToSection("#contact");
+  const handleVisitUs = () => {
+    window.open("https://maps.app.goo.gl/B6mkb6Tn4fRpaKdj7", "_blank", "noopener noreferrer");
   };
 
   useEffect(() => {

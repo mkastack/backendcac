@@ -6,6 +6,7 @@ export default function Blog() {
   const [postOpen, setPostOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   const [uploading, setUploading] = useState(false);
   const [rows, setRows] = useState([]);
   const [form, setForm] = useState({
@@ -13,6 +14,7 @@ export default function Blog() {
     author: '',
     content: '',
     image: '',
+    category: 'Inspiration',
   });
 
   useEffect(() => {
@@ -60,6 +62,7 @@ export default function Blog() {
       author: form.author,
       content: form.content,
       image_url: form.image,
+      category: form.category,
       published_at: new Date().toISOString(),
       status: 'Published'
     };
@@ -80,6 +83,7 @@ export default function Blog() {
           author: '',
           content: '',
           image: '',
+          category: 'Inspiration',
       });
       setPostOpen(false);
       setEditingId(null);
@@ -96,11 +100,16 @@ export default function Blog() {
       author: post.author,
       content: post.content || '',
       image: post.image_url || '',
+      category: post.category || 'Inspiration',
     });
     setPostOpen(true);
   };
 
-  const posts = rows;
+  const posts = rows.filter(p => 
+    (p.title || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (p.author || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (p.excerpt || '').toLowerCase().includes(searchQuery.toLowerCase())
+  );
   return (
     <>
       <main className="mx-auto max-w-7xl px-4 pb-20 pt-8 md:px-12">
@@ -156,9 +165,12 @@ export default function Blog() {
             <div className="relative max-w-md flex-1">
               <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#5e5e5e]">search</span>
               <input
-                className="w-full rounded-2xl border-none bg-white py-3 pl-12 pr-4 text-sm transition-all focus:ring-2 focus:ring-[#9e2016]/20"
+                className="w-full rounded-2xl border-none bg-white py-3 pl-12 pr-4 text-sm transition-all outline-none focus:outline-none focus:ring-0 shadow-none focus:shadow-none"
+                style={{boxShadow: 'none'}}
                 placeholder="Search announcements..."
                 type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <div className="flex items-center gap-2">
@@ -331,7 +343,21 @@ export default function Blog() {
                       onChange={(e) => setForm({ ...form, author: e.target.value })}
                     />
                   </div>
-                  {/* Image Upload */}
+                  {/* Category */}
+                  <div className="space-y-2">
+                    <label className="ml-1 text-sm font-bold uppercase tracking-wider text-[#5e5e5e]">Category</label>
+                    <select
+                      className="w-full rounded-xl border-none bg-[#f6f3f2] px-4 py-3.5 transition-all focus:bg-white focus:ring-2 focus:ring-[#9e2016]/20"
+                      value={form.category}
+                      onChange={(e) => setForm({ ...form, category: e.target.value })}
+                    >
+                      <option value="Inspiration">Inspiration</option>
+                      <option value="Youth Ministry">Youth Ministry</option>
+                      <option value="Church News">Church News</option>
+                      <option value="Family Life">Family Life</option>
+                      <option value="Testimony">Testimony</option>
+                    </select>
+                  </div>
                   <div className="space-y-2">
                     <label className="ml-1 text-sm font-bold uppercase tracking-wider text-[#5e5e5e]">Header Image</label>
                     <div className="flex items-center gap-4">
@@ -386,7 +412,7 @@ export default function Blog() {
               >
                 {editingId ? 'Update Post' : 'Save Post'}
               </button>
-              <button className="px-8 py-4 font-bold text-[#5e5e5e] transition-colors hover:text-[#1c1b1b]" onClick={() => { setPostOpen(false); setEditingId(null); setForm({title: '', author: '', content: '', image: ''}); }} type="button">
+              <button className="px-8 py-4 font-bold text-[#5e5e5e] transition-colors hover:text-[#1c1b1b]" onClick={() => { setPostOpen(false); setEditingId(null); setForm({title: '', author: '', content: '', image: '', category: 'Inspiration'}); }} type="button">
                 Cancel
               </button>
             </div>
