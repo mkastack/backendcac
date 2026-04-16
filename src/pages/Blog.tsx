@@ -12,6 +12,7 @@ import heroImage from "@/assets/649416000_122208445154563087_2317423105924190548
 import prayerImage from "@/assets/7.jpeg";
 import youthImage from "@/assets/4.jpeg";
 import conventionImage from "@/assets/619910776_122202868574563087_1389364340991551083_n.jpg";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 
 
@@ -204,7 +205,20 @@ export default function BlogPage() {
           <div className="container mx-auto px-6">
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {loading ? (
-                <div className="col-span-full text-center py-20 text-muted-foreground animate-pulse">Loading announcements...</div>
+                Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="bg-card border border-border rounded-2xl overflow-hidden shadow-soft">
+                    <Skeleton className="aspect-video w-full" />
+                    <div className="p-6 space-y-4">
+                      <div className="flex gap-4">
+                         <Skeleton className="h-4 w-20" />
+                         <Skeleton className="h-4 w-20" />
+                      </div>
+                      <Skeleton className="h-7 w-full" />
+                      <Skeleton className="h-12 w-full" />
+                      <Skeleton className="h-10 w-24 rounded-full" />
+                    </div>
+                  </div>
+                ))
               ) : filteredPosts.map((post, index) => (
                 <motion.article
                   key={post.id}

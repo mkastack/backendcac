@@ -190,27 +190,49 @@ export default function Dashboard() {
         <header className="mb-10 flex flex-col items-end justify-between gap-6 md:flex-row">
           <div className="max-w-2xl">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-2xl">{greeting.emoji}</span>
-              <span className="text-sm font-semibold text-[#9e2016] uppercase tracking-widest">{greeting.date}</span>
+              {loading ? <Skeleton className="h-6 w-32" /> : (
+                <>
+                  <span className="text-2xl">{greeting.emoji}</span>
+                  <span className="text-sm font-semibold text-[#9e2016] uppercase tracking-widest">{greeting.date}</span>
+                </>
+              )}
             </div>
-            <h1 className="mb-2 text-4xl font-extrabold tracking-tight text-[#1c1b1b]">
-              {greeting.text}, Admin!
-            </h1>
+            {loading ? <Skeleton className="h-10 w-64 mb-2" /> : (
+              <h1 className="mb-2 text-4xl font-extrabold tracking-tight text-[#1c1b1b]">
+                {greeting.text}, Admin!
+              </h1>
+            )}
             <p className="text-[#5e5e5e]">Here is what's happening across the congregation today. Your leadership and oversight guide our spiritual mission.</p>
           </div>
           <div className="flex flex-col items-end gap-2">
             <div className="font-mono text-3xl font-extrabold text-[#1c1b1b] tracking-tight tabular-nums">
               {greeting.time}
             </div>
-            <div className="flex -space-x-3">
-              <img className="h-10 w-10 rounded-full border-2 border-white" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJTZv_nXGQtr3ozI2hqNcBIlg9CoiFT6REG8fsmAhZxwEw7oDgan35ucLBhize0zt0o_iHYGp4QXGs5Feo37Z4OmpHGkmkidd4ggZrME7z9stTzYkgvDTTjgVIJIiIarLRlU3ndlQs7DnNNol9AOGhXbpa3FH0Ers1r0ReGXx0ePafCorAg_HJlTUL6EFHKTVJLLkWxqQWeP8NKWoke7fDQMd1S-lY9CAAO8P01ax9gkuYfcIn1q3K7p4OXdK18f2k2yUO3bRPDsSY" />
-              <img className="h-10 w-10 rounded-full border-2 border-white" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTbd4RlYaQCFtbuOvHSVVsGi7qbbcbWVPRyDe1ZXnvwqVF4AcgQrsXi3Wafettd4TMHwvCOsqDByVMv4IKInHG5igNlM5B3j2xoFsPrnYr-jPc8aNQ1ApjuFxN-jhV6RSzD73oiiuXKucLVkqK-cZwaB2EZBGidtXU8pd9ectRrDD4KtHfH2lEAtmmnGw9ZG45RHMDJnHnNBPKp-q_AgyggHPgRuMBa4i3piJ8H6d3NGDttmDNeMU9hBDICCS59A4UOFsv0XoJrZvw" />
-              <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-[#e5e2e1] text-xs font-bold">+12</div>
-            </div>
+            {!loading && (
+              <div className="flex -space-x-3">
+                <img className="h-10 w-10 rounded-full border-2 border-white" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJTZv_nXGQtr3ozI2hqNcBIlg9CoiFT6REG8fsmAhZxwEw7oDgan35ucLBhize0zt0o_iHYGp4QXGs5Feo37Z4OmpHGkmkidd4ggZrME7z9stTzYkgvDTTjgVIJIiIarLRlU3ndlQs7DnNNol9AOGhXbpa3FH0Ers1r0ReGXx0ePafCorAg_HJlTUL6EFHKTVJLLkWxqQWeP8NKWoke7fDQMd1S-lY9CAAO8P01ax9gkuYfcIn1q3K7p4OXdK18f2k2yUO3bRPDsSY" />
+                <img className="h-10 w-10 rounded-full border-2 border-white" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTbd4RlYaQCFtbuOvHSVVsGi7qbbcbWVPRyDe1ZXnvwqVF4AcgQrsXi3Wafettd4TMHwvCOsqDByVMv4IKInHG5igNlM5B3j2xoFsPrnYr-jPc8aNQ1ApjuFxN-jhV6RSzD73oiiuXKucLVkqK-cZwaB2EZBGidtXU8pd9ectRrDD4KtHfH2lEAtmmnGw9ZG45RHMDJnHnNBPKp-q_AgyggHPgRuMBa4i3piJ8H6d3NGDttmDNeMU9hBDICCS59A4UOFsv0XoJrZvw" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-[#e5e2e1] text-xs font-bold">+12</div>
+              </div>
+            )}
           </div>
         </header>
 
         <section className="mb-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {loading ? (
+             Array.from({ length: 6 }).map((_, i) => (
+               <div key={i} className="rounded-xl bg-white p-8 shadow-sm border border-neutral-100 space-y-4">
+                  <div className="flex justify-between">
+                    <Skeleton className="h-10 w-10 rounded-xl" />
+                    <Skeleton className="h-5 w-12 rounded-full" />
+                  </div>
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-10 w-32" />
+                  <Skeleton className="h-1.5 w-full rounded-full" />
+               </div>
+             ))
+          ) : (
+            <>
           <div className="group flex flex-col justify-between rounded-xl bg-white p-8 shadow-[0_12px_40px_rgba(28,27,27,0.06)] transition-shadow hover:shadow-[0_12px_40px_rgba(28,27,27,0.08)]">
             <div className="mb-6 flex items-start justify-between">
               <div className="rounded-xl bg-green-100 p-3 text-green-700">
@@ -323,6 +345,8 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+          </>
+          )}
         </section>
 
         {/* WhatsApp Notifications Section */}
@@ -400,7 +424,17 @@ export default function Dashboard() {
               <button className="text-sm font-bold text-[#9e2016] hover:underline">View All Activity →</button>
             </div>
             <div className="flex flex-col">
-              {recentActivity.length > 0 ? recentActivity.map((item) => (
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-start gap-6 p-6 border-b border-neutral-50 last:border-b-0">
+                    <Skeleton className="h-12 w-12 rounded-full shrink-0" />
+                    <div className="flex-grow space-y-2">
+                       <Skeleton className="h-4 w-1/2" />
+                       <Skeleton className="h-3 w-3/4" />
+                    </div>
+                  </div>
+                ))
+              ) : recentActivity.length > 0 ? recentActivity.map((item) => (
                 <div key={`${item.type}-${item.id}`} className="flex items-start gap-6 p-6 transition-colors hover:bg-[#f6f3f2] border-b border-neutral-50 last:border-b-0">
                   <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full ${item.iconBg}`}>
                     <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>{item.icon}</span>

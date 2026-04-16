@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
+import { Skeleton } from "@/components/ui/Skeleton";
+
 export function EventsSection() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -73,6 +75,7 @@ export function EventsSection() {
       category: "Ministry",
     },
   ];
+
   return (
     <section className="py-20 lg:py-28 bg-church-light-blue">
       <div className="container mx-auto px-6">
@@ -95,7 +98,21 @@ export function EventsSection() {
 
             <div className="space-y-6">
               {loading ? (
-                <div className="text-center py-10 text-muted-foreground">Loading events...</div>
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="bg-card border border-border rounded-2xl p-6 shadow-sm overflow-hidden flex flex-col md:flex-row gap-6">
+                    <div className="flex-1 space-y-4">
+                      <Skeleton className="h-5 w-20 rounded-full" />
+                      <Skeleton className="h-8 w-3/4" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-5/6" />
+                    </div>
+                    <div className="md:w-[260px] space-y-3">
+                      <Skeleton className="h-4 w-1/2" />
+                      <Skeleton className="h-4 w-1/2" />
+                      <Skeleton className="h-10 w-full rounded-lg" />
+                    </div>
+                  </div>
+                ))
               ) : events.length > 0 ? (
                 events.map((event, index) => (
                   <motion.div
