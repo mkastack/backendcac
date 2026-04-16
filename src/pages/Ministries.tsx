@@ -47,24 +47,31 @@ export default function MinistriesPage() {
           // Assign specific activities based on ministry name
           let activities = [];
           const name = m.name.toLowerCase();
-          if (name.includes('music') || name.includes('worship')) {
-            activities = ["Lead Sunday Worship Services", "Organize Choir Practices", "Produce Worship Albums", "Conduct Music Workshops"];
-          } else if (name.includes('youth')) {
-            activities = ["Organize Youth Camps", "Lead Bible Study Sessions", "Plan Outreach Programs", "Mentor Young Adults"];
-          } else if (name.includes('children')) {
-            activities = ["Sunday School Teaching", "Children's Church Programs", "Holiday Bible Clubs", "Parent-Child Activities"];
-          } else if (name.includes('women')) {
-            activities = ["Women's Prayer Meetings", "Ladies' Fellowship Events", "Mother-Daughter Programs", "Community Outreach"];
-          } else if (name.includes('men')) {
-            activities = ["Men's Prayer Breakfasts", "Leadership Development", "Community Service Projects", "Fellowship Activities"];
-          } else if (name.includes('media') || name.includes('technical')) {
-            activities = ["Live Stream Services", "Audio/Video Production", "Social Media Management", "Technical Support"];
-          } else if (name.includes('prayer')) {
-            activities = ["Prayer Meetings", "Intercessory Prayer", "Prayer Retreats", "24/7 Prayer Chain"];
-          } else if (name.includes('evangelism') || name.includes('outreach')) {
-            activities = ["Community Outreach", "Door-to-Door Evangelism", "Mission Trips", "Public Preaching"];
+          
+          if (name.includes('music') || name.includes('worship') || name.includes('choir')) {
+            activities = ["Lead Sunday Worship Services", "Weekly Choir Rehearsals", "Special Music Ministrations", "Vocal & Instrument Training"];
+          } else if (name.includes('youth') || name.includes('peniel')) {
+            activities = ["Youth Impact Summits", "Skill Development Workshops", "Community Outreach & Evangelism", "Youth Fellowship & Mentorship"];
+          } else if (name.includes('children') || name.includes('sunday school') && name.includes('child')) {
+            activities = ["Foundational Bible Lessons", "Children's Creative Arts", "Memory Verse Recitations", "Annual Children's Day Celebration"];
+          } else if (name.includes('women') || name.includes('virtuous')) {
+            activities = ["Women of Virtue Prayer Meetings", "Home & Family Management Seminars", "Business & Empowerment Talks", "Outreach to Widows & Orphans"];
+          } else if (name.includes('men') || name.includes('king')) {
+            activities = ["Men's Prayer & Leadership Manuals", "Father-Child Mentoring Projects", "Health & Fitness Seminars", "Fellowship & Charity Outreach"];
+          } else if (name.includes('media') || name.includes('technical') || name.includes('it')) {
+            activities = ["Digital Content Creation", "Live Streaming Management", "Audio & Visual Engineering", "Social Media Engagement"];
+          } else if (name.includes('prayer') || name.includes('intercessor')) {
+            activities = ["24/7 Prayer Chain Service", "Monthly Night Vigils", "Intercessory Prayer for Nations", "School of Prayer Workshops"];
+          } else if (name.includes('evangelism') || name.includes('mission') || name.includes('outreach')) {
+            activities = ["Market & Community Outreach", "Prison & Hospital Ministrations", "Gospel Crusade Support", "Discipleship & Follow-up"];
+          } else if (name.includes('usher') || name.includes('protocol') || name.includes('hospitality')) {
+            activities = ["First Impression Management", "Congregation Order & Seating", "Warm Welcome Protocols", "Venue Logistics Support"];
+          } else if (name.includes('welfare') || name.includes('charity')) {
+            activities = ["Benevolence To Needy Members", "Hospital & Home Visits", "Educational Support Schemes", "Clothing & Food Drives"];
+          } else if (name.includes('education') || name.includes('bible study') || name.includes('school')) {
+            activities = ["In-depth Bible Doctrines", "Theological Studies Units", "Faith-Based Career Guidance", "New Converts Classes"];
           } else {
-            activities = m.activities || ["Regular Fellowship", "Community Service", "Bible Study"];
+            activities = m.activities && m.activities.length > 0 ? m.activities : ["Weekly Fellowship Meetings", "Faith-Building Seminars", "Community Service Projects", "Biblical Leadership Training"];
           }
           
           return {
