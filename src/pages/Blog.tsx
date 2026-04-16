@@ -148,19 +148,20 @@ export default function BlogPage() {
             />
             <div className="absolute inset-0 bg-hero-overlay" />
           </div>
-          <div className="container mx-auto px-6 relative">
+
+          <div className="container mx-auto px-6 relative z-10 text-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="max-w-3xl mx-auto text-center"
+              className="max-w-3xl mx-auto"
             >
-              <span className="inline-block px-5 py-2 bg-black/40 text-white border border-white/20 backdrop-blur-md rounded-full text-[11px] font-black uppercase tracking-[0.2em] shadow-xl mb-6">
+              <span className="inline-block px-5 py-2 bg-white/10 text-white border border-white/20 backdrop-blur-xl rounded-full text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl mb-8 transition-all hover:bg-white/20">
                 Inspire & Empower
               </span>
-              <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
+              <h1 className="font-serif text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 drop-shadow-md">
                 Our Blog
               </h1>
-              <p className="text-white/80 text-lg">
+              <p className="text-white/80 text-lg md:text-xl">
                 Stay updated with voices from our church, spiritual insights, and community news.
               </p>
             </motion.div>
