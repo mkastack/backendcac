@@ -139,29 +139,29 @@ export function EventsSection() {
                             </span>
                           )}
                           {event.featured && !event.isPast && (
-                            <span className="px-4 py-1.5 bg-[#ffdad5] text-[#ba1a1a] rounded-full text-[10px] font-extrabold uppercase tracking-widest">
+                            <span className="px-4 py-1.5 bg-[#ffdad5] dark:bg-[#ba1a1a]/20 text-[#ba1a1a] dark:text-[#ffb4ab] rounded-full text-[10px] font-extrabold uppercase tracking-widest">
                               Featured
                             </span>
                           )}
                         </div>
-                        <h3 className="font-heading font-bold text-xl text-[#1c1b1b] mb-2 group-hover:text-[#ba1a1a] transition-colors">
+                        <h3 className="font-heading font-bold text-xl text-foreground mb-2 group-hover:text-[#ba1a1a] transition-colors">
                           {event.title}
                         </h3>
-                        <p className="text-[#5e5e5e] text-sm leading-relaxed mb-3">{event.description}</p>
+                        <p className="text-muted-foreground text-sm leading-relaxed mb-3">{event.description}</p>
                       </div>
 
                       {/* Right Details Panel */}
                       <div className="md:w-[260px] flex flex-col justify-between gap-4 md:border-l md:border-border md:pl-6">
                         <div className="space-y-2">
-                          <div className="flex items-center gap-3 text-[#1c1b1b] text-sm">
+                          <div className="flex items-center gap-3 text-foreground text-sm">
                             <Calendar className="w-4 h-4 text-[#ba1a1a]" />
                             <span className="font-semibold">{event.date}</span>
                           </div>
-                          <div className="flex items-center gap-3 text-[#1c1b1b] text-sm">
+                          <div className="flex items-center gap-3 text-foreground text-sm">
                             <Clock className="w-4 h-4 text-[#ba1a1a]" />
                             <span className="font-semibold">{event.time}</span>
                           </div>
-                          <div className="flex items-center gap-3 text-[#1c1b1b] text-sm">
+                          <div className="flex items-center gap-3 text-foreground text-sm">
                             <MapPin className="w-4 h-4 text-[#ba1a1a]" />
                             <span className="font-semibold">{event.location}</span>
                           </div>

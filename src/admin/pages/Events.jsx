@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { uploadChurchAsset } from '../../lib/storage';
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Events() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -242,7 +243,24 @@ export default function Events() {
           </div>
           <div className="flex flex-col">
             {loading ? (
-              <div className="p-12 text-center text-neutral-400">Loading events...</div>
+              <div className="divide-y divide-neutral-100">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="p-6 flex items-start gap-6">
+                    <Skeleton className="w-12 h-12 rounded-xl shrink-0" />
+                    <div className="flex-grow space-y-3">
+                      <div className="flex justify-between">
+                        <Skeleton className="h-5 w-1/3" />
+                        <Skeleton className="h-5 w-16 rounded-full" />
+                      </div>
+                      <Skeleton className="h-4 w-3/4" />
+                      <div className="flex gap-4">
+                        <Skeleton className="h-3 w-20" />
+                        <Skeleton className="h-3 w-20" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : events.length > 0 ? (
               events.map((event) => (
                 <div key={event.id} className="p-6 flex items-start gap-6 hover:bg-neutral-50 transition-colors border-b border-neutral-100/50">

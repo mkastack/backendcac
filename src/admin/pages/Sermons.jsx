@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { uploadChurchAsset } from '../../lib/storage';
+import { Skeleton } from "@/components/ui/skeleton";
 
 const sermonSeed = [
   {
@@ -259,7 +260,39 @@ export default function Sermons() {
               </tr>
             </thead>
             <tbody>
-              {filteredRows.map((row) => (
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="rounded-2xl bg-white/50">
+                    <td className="rounded-l-2xl px-6 py-5">
+                      <div className="flex items-center gap-4">
+                        <Skeleton className="h-12 w-12 rounded-xl shrink-0" />
+                        <div className="space-y-2 flex-1">
+                          <Skeleton className="h-5 w-3/4" />
+                          <Skeleton className="h-4 w-1/2" />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                        <Skeleton className="h-4 w-24" />
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <Skeleton className="h-4 w-20 mx-auto" />
+                    </td>
+                    <td className="px-6 py-5 text-center">
+                      <div className="flex justify-center gap-2">
+                        <Skeleton className="h-8 w-8 rounded-lg" />
+                        <Skeleton className="h-8 w-8 rounded-lg" />
+                      </div>
+                    </td>
+                    <td className="rounded-r-2xl px-6 py-5 text-right">
+                      <Skeleton className="h-8 w-8 rounded-full ml-auto" />
+                    </td>
+                  </tr>
+                ))
+              ) : filteredRows.map((row) => (
                 <tr key={row.id} className="group rounded-2xl bg-white shadow-sm transition-all hover:shadow-md">
                   <td className="rounded-l-2xl px-6 py-5">
                     <div className="flex items-center gap-4">

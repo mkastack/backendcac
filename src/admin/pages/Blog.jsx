@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { uploadChurchAsset } from '../../lib/storage';
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Blog() {
   const [postOpen, setPostOpen] = useState(false);
@@ -197,7 +198,39 @@ export default function Blog() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#e1bfb9]/10">
-                {posts.map((post) => (
+                {loading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i}>
+                      <td className="px-8 py-6">
+                        <div className="flex items-center gap-4">
+                          <Skeleton className="h-16 w-16 rounded-xl shrink-0" />
+                          <div className="flex-1 space-y-2">
+                            <Skeleton className="h-5 w-3/4" />
+                            <Skeleton className="h-4 w-1/2" />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-8 py-6">
+                        <div className="flex items-center gap-3">
+                          <Skeleton className="h-8 w-8 rounded-full" />
+                          <Skeleton className="h-4 w-24" />
+                        </div>
+                      </td>
+                      <td className="px-8 py-6">
+                        <Skeleton className="h-4 w-20" />
+                      </td>
+                      <td className="px-8 py-6">
+                        <Skeleton className="h-6 w-24 rounded-full" />
+                      </td>
+                      <td className="px-8 py-6">
+                        <div className="flex justify-end gap-2">
+                          <Skeleton className="h-8 w-8 rounded-lg" />
+                          <Skeleton className="h-8 w-8 rounded-lg" />
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : posts.map((post) => (
                   <tr className="group transition-all hover:bg-white" key={post.title}>
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-4">

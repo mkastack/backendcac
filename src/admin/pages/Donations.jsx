@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Donations() {
   const [purposeFilter, setPurposeFilter] = useState('All Purposes');
@@ -188,7 +189,39 @@ export default function Donations() {
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
-              {filteredDonations.map((d, index) => (
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i}>
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                        <Skeleton className="h-4 w-32" />
+                      </div>
+                    </td>
+                    <td className="px-8 py-5">
+                      <Skeleton className="h-4 w-16" />
+                    </td>
+                    <td className="px-8 py-5">
+                      <Skeleton className="h-4 w-24" />
+                    </td>
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-4 w-4 rounded" />
+                        <Skeleton className="h-4 w-24" />
+                      </div>
+                    </td>
+                    <td className="px-8 py-5">
+                      <Skeleton className="h-5 w-20 rounded-full" />
+                    </td>
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-2 w-2 rounded-full" />
+                        <Skeleton className="h-4 w-16" />
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : filteredDonations.map((d, index) => (
                 <tr key={index} className="hover:bg-neutral-50/50 transition-colors group">
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-3">

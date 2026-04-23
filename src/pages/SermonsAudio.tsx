@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-church.jpg";
 import { supabase } from "@/lib/supabase";
 
+import { Skeleton } from "@/components/ui/skeleton";
+
 // Seed data removed, now fetching from Supabase
 
 const topics = ["All Topics", "Spiritual Warfare", "Grace", "Holy Spirit", "Rest", "Forgiveness", "Wisdom"];
@@ -122,8 +124,23 @@ export default function AudioSermonsPage() {
         <section className="py-16 bg-church-cream">
           <div className="container mx-auto px-6">
             {loading ? (
-              <div className="text-center py-20">
-                <p className="text-muted-foreground text-lg">Loading audio sermons...</p>
+              <div className="space-y-6 max-w-4xl mx-auto">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="bg-card border border-border rounded-2xl p-6 sm:p-8 shadow-sm">
+                    <div className="flex flex-col sm:flex-row gap-6">
+                      <Skeleton className="w-16 h-16 rounded-xl shrink-0" />
+                      <div className="flex-1 space-y-4">
+                        <Skeleton className="h-4 w-20 rounded-full" />
+                        <Skeleton className="h-7 w-3/4" />
+                        <Skeleton className="h-4 w-full" />
+                        <div className="flex gap-4">
+                          <Skeleton className="h-4 w-24" />
+                          <Skeleton className="h-4 w-24" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : filteredSermons.length > 0 ? (
               <div className="space-y-6 max-w-4xl mx-auto">
